@@ -1421,6 +1421,43 @@ local FakeBombToggle = MainTab:Toggle({
     end
 })
 
+local fakeBombLoaded = false
+
+local FakeBombToggle = MainTab:Toggle({
+    Title = "Fake Bomb",
+    Desc = "Waguri Bomb Jump",
+    Type = "Checkbox",
+    Value = false,
+
+    Callback = function(state)
+
+        if state then
+
+            if fakeBombLoaded then
+                return
+            end
+
+            fakeBombLoaded = true
+
+            loadstring(game:HttpGet(
+                "https://raw.githubusercontent.com/waguri-mm2/Murder-mystery-2/refs/heads/main/Waguri-bomb-jump.lua"
+            ))()
+
+        else
+
+            fakeBombLoaded = false
+
+            local gui = game.Players.LocalPlayer.PlayerGui:FindFirstChild("BombJumpGUI")
+
+            if gui then
+                gui:Destroy()
+            end
+        end
+
+        saveConfig()
+    end
+})
+
 -- ── Native Action Buttons (top-right, red, mobile-friendly) ───────────────────
 local invisNativeLbl = nil
 
@@ -2110,7 +2147,7 @@ local WeaponEspEnabled = false
 local HL_TAG = "_WH"
 
 VisualsTab:Toggle({
-    Title = "Weapon ESP",
+    Title = "Esp everyone",
     Desc = "Show weapon role highlights",
     Icon = "swords",
     Type = "Checkbox",
