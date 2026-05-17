@@ -1452,28 +1452,20 @@ nFrame.Position               = UDim2.new(1, -6, 0, 52)
 nFrame.Size                   = UDim2.new(0, 124, 1, 0)
 nFrame.Parent                 = nGui
 
--- Make the whole container draggable
-local dragging
-local dragInput
-local dragStart
-local startPos
-
-local function update(input)
-    local delta = input.Position - dragStart
-    nFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-end
+-- Make Button Container Draggable
+local dragging, dragInput, dragStart, startPos
 
 nFrame.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         dragging = true
         dragStart = input.Position
         startPos = nFrame.Position
+    end
+end)
 
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                dragging = false
-            end
-        end)
+nFrame.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = false
     end
 end)
 
@@ -1485,7 +1477,8 @@ end)
 
 RunService.RenderStepped:Connect(function()
     if dragging and dragInput then
-        update(dragInput)
+        local delta = dragInput.Position - dragStart
+        nFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
     end
 end)
 
@@ -1502,20 +1495,20 @@ local PARTICLE_COUNT = 20
 
 local function makeNativeBtn(text, cb)
     local btn = Instance.new("TextButton")
-    btn.Size             = UDim2.new(0, 170, 0, 50)        -- Bigger & wider
-    btn.BackgroundColor3 = Color3.fromRGB(15, 15, 25)     -- Darker modern look
-    btn.Text             = ""
-    btn.AutoButtonColor  = false
-    btn.BorderSizePixel  = 0
-    btn.Parent           = nFrame
+btn.Size             = UDim2.new(0, 170, 0, 52)           -- Wider
+btn.BackgroundColor3 = Color3.fromRGB(10, 20, 40)         -- Ocean Blue dark
+btn.Text             = ""
+btn.AutoButtonColor  = false
+btn.BorderSizePixel  = 0
+btn.Parent           = nFrame
 
-    local corner = Instance.new("UICorner", btn)
-    corner.CornerRadius = UDim.new(0, 12)   -- More rounded
+local corner = Instance.new("UICorner", btn)
+corner.CornerRadius = UDim.new(0, 12)
 
-    local stroke = Instance.new("UIStroke", btn)
-    stroke.Color        = Color3.fromRGB(0, 180, 255)   -- Ocean Blue accent
-    stroke.Thickness    = 2
-    stroke.Transparency = 0.3
+local stroke = Instance.new("UIStroke", btn)
+stroke.Color        = Color3.fromRGB(0, 180, 255)
+stroke.Thickness    = 2.5
+stroke.Transparency = 0.2
 
     -- Glow effect
     local glow = Instance.new("Frame", btn)
@@ -1752,39 +1745,31 @@ local function makeNativeBtn(text, cb)
     return btn, lbl
 end
 
--- Shoot Murd
-nShootBtn = (function()
-    local btn = makeNativeBtn("Shoot Murd", function()
-        local ok, err = pcall(doSingleShot)
-        if not ok then warn("[Waguri] ShootMurd: " .. tostring(err)) end
-    end)
-    btn.Visible = false
-    return btn
-end)()
+-- ==================== NATIVE BUTTONS ====================
+nShootBtn = makeNativeBtn("Shoot Murderer", function()
+    local ok, err = pcall(doSingleShot)
+    if not ok then warn("[Waguri] Shoot: " .. tostring(err)) end
+end)
+nShootBtn.Visible = false
 
--- Throw Knife
-nThrowBtn = (function()
-    local btn = makeNativeBtn("Throw Knife", function()
-        if not isLpMurd then
-            WindUI:Notify({ Title = "Throw Knife", Content = "You are not the Murderer.", Duration = 2, Icon = "x" })
-            return
-        end
-        local ok, err = pcall(doThrowKnife)
-        if not ok then warn("[Waguri] ThrowKnife: " .. tostring(err)) end
-    end)
-    btn.Visible = false
-    return btn
-end)()
+nThrowBtn = makeNativeBtn("Throw Knife", function()
+    if not isLpMurd then
+        WindUI:Notify({ Title = "Throw Knife", Content = "You are not the Murderer.", Duration = 2, Icon = "x" })
+        return
+    end
+    local ok, err = pcall(doThrowKnife)
+    if not ok then warn("[Waguri] ThrowKnife: " .. tostring(err)) end
+end)
+nThrowBtn.Visible = false
 
--- Grab Gun
-nGrabBtn = (function()
-    local btn = makeNativeBtn("Grab Gun", function()
-        local ok, err = pcall(doGrabGun)
-        if not ok then warn("[Waguri] GrabGun: " .. tostring(err)) end
-    end)
-    btn.Visible = false
-    return btn
-end)()
+nGrabBtn = makeNativeBtn("Grab Gun", function()
+    local ok, err = pcall(doGrabGun)
+    if not ok then warn("[Waguri] GrabGun: " .. tostring(err)) end
+end)
+nGrabBtn.Visible = false
+
+nInvisBtn, invisNativeLbl = makeNativeBtn("Invisible", doInvisToggle)
+nInvisBtn.Visible = false
 
 local function setCharTransparency(char, t)
     for _, v in ipairs(char:GetDescendants()) do
