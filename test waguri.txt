@@ -18,7 +18,7 @@ local KNIFE_SPEED_CAP    = 10
 local KNIFE_SPEED_DEF    = 120
 local FAKE_BOMB_Y_OFFSET = 3.2
 local MAX_VELOCITY       = 80
-local OWNER              = "jvpogi233j"
+local OWNER              = "waguri67"
 
 local silentAimEnabled    = false
 local manualAimEnabled    = false
@@ -2208,7 +2208,7 @@ local ServerInfo = MiscTab:Paragraph({
     Desc          = string.format("Game: %s\nPlace ID: %d\nJob ID: %s\nPlayers: %d/%d",
         gameName, game.PlaceId, game.JobId, #Players:GetPlayers(), Players.MaxPlayers),
     Color         = "Blue",
-    Thumbnail     = "rbxassetid://80648874729441",
+    Thumbnail = "https://www.roblox.com/asset-thumbnail/image?assetId=80648874729441&width=420&height=420&format=png",
     ThumbnailSize = 100,
 })
 
@@ -2241,7 +2241,7 @@ CreditsTab:Paragraph({
     Title         = "Waguri | Official",
     Desc          = "Made by waguri so pls follow me :<",
     Color         = "Red",
-    Thumbnail     = "rbxassetid://80648874729441",
+    Thumbnail = "https://www.roblox.com/asset-thumbnail/image?assetId=80648874729441&width=420&height=420&format=png",
     ThumbnailSize = 140,
     Buttons = {
         {
