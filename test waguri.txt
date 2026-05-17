@@ -1452,6 +1452,47 @@ nFrame.Position               = UDim2.new(1, -6, 0, 52)
 nFrame.Size                   = UDim2.new(0, 124, 1, 0)
 nFrame.Parent                 = nGui
 
+-- 🧲 DRAGGABLE BUTTON CONTAINER
+
+local UserInputService = game:GetService("UserInputService")
+
+local dragging = false
+local dragStart
+local startPos
+
+nFrame.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1
+	or input.UserInputType == Enum.UserInputType.Touch then
+
+		dragging = true
+		dragStart = input.Position
+		startPos = nFrame.Position
+
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+			end
+		end)
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+	if dragging and (
+		input.UserInputType == Enum.UserInputType.MouseMovement
+		or input.UserInputType == Enum.UserInputType.Touch
+	) then
+
+		local delta = input.Position - dragStart
+
+		nFrame.Position = UDim2.new(
+			startPos.X.Scale,
+			startPos.X.Offset + delta.X,
+			startPos.Y.Scale,
+			startPos.Y.Offset + delta.Y
+		)
+	end
+end)
+
 local nLayout = Instance.new("UIListLayout")
 nLayout.SortOrder           = Enum.SortOrder.LayoutOrder
 nLayout.Padding             = UDim.new(0, 4)
