@@ -1431,8 +1431,7 @@ local function resetInvisBtn()
     setInvisBtn("Invisible")
 end
 
--- GUI setup
--- ── Native Circular Action Buttons ───────────────────────────────────────────
+-- ── Circular Draggable Buttons (Fixed) ─────────────────────────────────────
 local nGui = Instance.new("ScreenGui")
 nGui.Name = "Waguri_Btns"
 nGui.ResetOnSpawn = false
@@ -1445,152 +1444,142 @@ invisSnd.SoundId = INVIS_SOUND_ID
 invisSnd.Volume = 0.5
 invisSnd.Parent = nGui
 
--- Main draggable container
+-- Draggable Container
 local nFrame = Instance.new("Frame")
 nFrame.Name = "BtnContainer"
 nFrame.BackgroundTransparency = 1
-nFrame.Size = UDim2.new(0, 280, 0, 80)  -- Wide enough for horizontal layout
-nFrame.Position = UDim2.new(0, 20, 1, -120)  -- Bottom-Left position (change as you like)
+nFrame.Size = UDim2.new(0, 300, 0, 90)
+nFrame.Position = UDim2.new(0.5, -150, 1, -140) -- Center bottom (change if you want)
 nFrame.Parent = nGui
 
--- Make container draggable
-local dragging, dragInput, dragStart, startPos
-local function updateDrag(input)
-    local delta = input.Position - dragStart
-    nFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-end
+-- Dragging
+local dragging = false
+local dragInput, dragStart, startPos
 
 nFrame.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         dragging = true
         dragStart = input.Position
         startPos = nFrame.Position
-        
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                dragging = false
-            end
-        end)
+    end
+end)
+
+nFrame.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = false
     end
 end)
 
 nFrame.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-        dragInput = input
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - dragStart
+        nFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
     end
 end)
 
-RunService.RenderStepped:Connect(function()
-    if dragging and dragInput then
-        updateDrag(dragInput)
-    end
-end)
-
--- Button settings
-local BTN_SIZE = 65
-local function makeCircularBtn(text, cb, color)
+-- Circular Button Creator
+local BTN_SIZE = 68
+local function makeCircularBtn(text, callback, mainColor)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(0, BTN_SIZE, 0, BTN_SIZE)
-    btn.BackgroundColor3 = color or Color3.fromRGB(20, 20, 20)
+    btn.BackgroundColor3 = mainColor or Color3.fromRGB(25, 25, 25)
     btn.Text = ""
     btn.AutoButtonColor = false
     btn.BorderSizePixel = 0
     btn.Parent = nFrame
 
-    -- Perfect circle
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0.5, 0)
+    corner.CornerRadius = UDim.new(1, 0)
     corner.Parent = btn
 
-    -- Stroke
     local stroke = Instance.new("UIStroke")
+    stroke.Thickness = 2.8
     stroke.Color = Color3.fromRGB(255, 60, 60)
-    stroke.Thickness = 2.5
-    stroke.Transparency = 0.1
     stroke.Parent = btn
 
-    -- Glow
-    local glow = Instance.new("UIStroke")
-    glow.Color = color or Color3.fromRGB(255, 80, 80)
-    glow.Thickness = 6
-    glow.Transparency = 0.7
-    glow.Parent = btn
-
-    -- Label
     local lbl = Instance.new("TextLabel")
-    lbl.Size = UDim2.new(1, 0, 1, 0)
+    lbl.Size = UDim2.new(1, -4, 1, -4)
+    lbl.Position = UDim2.new(0, 2, 0, 2)
     lbl.BackgroundTransparency = 1
     lbl.Text = text
-    lbl.TextColor3 = Color3.fromRGB(255, 255, 255)
-    lbl.TextSize = 13
-    lbl.Font = Enum.Font.GothamSemibold
+    lbl.TextColor3 = Color3.new(1, 1, 1)
+    lbl.TextSize = 13.5
+    lbl.Font = Enum.Font.GothamBold
     lbl.TextWrapped = true
     lbl.Parent = btn
 
-    -- Simple hover effect
+    -- Hover + Click Effects
     btn.MouseEnter:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.15), {Size = UDim2.new(0, BTN_SIZE+8, 0, BTN_SIZE+8)}):Play()
-        TweenService:Create(stroke, TweenInfo.new(0.2), {Thickness = 3.5}):Play()
+        TweenService:Create(btn, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {Size = UDim2.new(0, BTN_SIZE+6, 0, BTN_SIZE+6)}):Play()
     end)
-    
     btn.MouseLeave:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.2), {Size = UDim2.new(0, BTN_SIZE, 0, BTN_SIZE)}):Play()
-        TweenService:Create(stroke, TweenInfo.new(0.2), {Thickness = 2.5}):Play()
+        TweenService:Create(btn, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {Size = UDim2.new(0, BTN_SIZE, 0, BTN_SIZE)}):Play()
     end)
 
-    -- Click effect
     btn.MouseButton1Down:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.1), {Size = UDim2.new(0, BTN_SIZE-6, 0, BTN_SIZE-6)}):Play()
+        TweenService:Create(btn, TweenInfo.new(0.1), {BackgroundColor3 = mainColor:Lerp(Color3.new(1,1,1), 0.2)}):Play()
     end)
-    
     btn.MouseButton1Up:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.15), {Size = UDim2.new(0, BTN_SIZE, 0, BTN_SIZE)}):Play()
-        task.spawn(cb)
+        TweenService:Create(btn, TweenInfo.new(0.15), {BackgroundColor3 = mainColor}):Play()
+        task.spawn(callback)
     end)
 
     return btn, lbl
 end
 
--- Create buttons horizontally
-local spacing = 12
-local startX = 0
+-- Create Buttons with UIListLayout (No sticking)
+local listLayout = Instance.new("UIListLayout")
+listLayout.FillDirection = Enum.FillDirection.Horizontal
+listLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+listLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+listLayout.Padding = UDim.new(0, 15)
+listLayout.Parent = nFrame
 
-nShootBtn = makeCircularBtn("SHOOT", function()
-    pcall(doSingleShot)
-end, Color3.fromRGB(180, 0, 0))
-
-nShootBtn.Position = UDim2.new(0, startX, 0, 0)
-startX += BTN_SIZE + spacing
-
+nShootBtn = makeCircularBtn("SHOOT", doSingleShot, Color3.fromRGB(170, 0, 0))
 nThrowBtn = makeCircularBtn("THROW", function()
     if not isLpMurd then
-        WindUI:Notify({ Title = "Throw Knife", Content = "You are not the Murderer.", Duration = 2, Icon = "x" })
+        WindUI:Notify({Title = "Throw Knife", Content = "You are not the Murderer.", Duration = 2, Icon = "x"})
         return
     end
-    pcall(doThrowKnife)
-end, Color3.fromRGB(200, 100, 0))
-nThrowBtn.Position = UDim2.new(0, startX, 0, 0)
-startX += BTN_SIZE + spacing
+    doThrowKnife()
+end, Color3.fromRGB(220, 120, 0))
 
-nGrabBtn = makeCircularBtn("GRAB", function()
-    pcall(doGrabGun)
-end, Color3.fromRGB(0, 140, 255))
-nGrabBtn.Position = UDim2.new(0, startX, 0, 0)
-startX += BTN_SIZE + spacing
+nGrabBtn = makeCircularBtn("GRAB", doGrabGun, Color3.fromRGB(0, 120, 255))
+nInvisBtn, invisNativeLbl = makeCircularBtn("INVIS", doInvisToggle, Color3.fromRGB(130, 0, 220))
 
-nInvisBtn, invisNativeLbl = makeCircularBtn("INVIS", doInvisToggle, Color3.fromRGB(120, 0, 200))
-nInvisBtn.Position = UDim2.new(0, startX, 0, 0)
-
--- Visibility control
-local function updateBtnVisibility()
+-- Update visibility when toggles change
+local function updateButtonVisibility()
     if nShootBtn then nShootBtn.Visible = manualAimEnabled end
     if nThrowBtn then nThrowBtn.Visible = throwKnifeEnabled end
     if nGrabBtn then nGrabBtn.Visible = grabGunEnabled end
     if nInvisBtn then nInvisBtn.Visible = invisibleEnabled end
 end
 
--- Call this after toggles
-updateBtnVisibility()
+-- Hook into toggles
+SilentAimToggle.Callback = function(s) silentAimEnabled = s; saveConfig() end -- keep old
+ManualAimToggle.Callback = function(s) 
+    manualAimEnabled = s 
+    updateButtonVisibility()
+    saveConfig() 
+end
+ThrowKnifeToggle.Callback = function(s) 
+    throwKnifeEnabled = s 
+    updateButtonVisibility()
+    saveConfig() 
+end
+GrabGunToggle.Callback = function(s) 
+    grabGunEnabled = s 
+    updateButtonVisibility()
+    saveConfig() 
+end
+InvisibleToggle.Callback = function(s) 
+    invisibleEnabled = s 
+    updateButtonVisibility()
+    saveConfig() 
+end
+
+-- Initial visibility
+task.defer(updateButtonVisibility)
 
 -- Shoot Murd
 nShootBtn = (function()
