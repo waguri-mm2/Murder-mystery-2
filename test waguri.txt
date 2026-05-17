@@ -151,6 +151,7 @@ local function loadConfig()
         espInnocent = InnocentEspToggle.Value ~= false
         espGun      = GunEspToggle.Value      ~= false
         espinno    = InnoEspToggle.Value      ~= false
+         espAllPlayers = falselocal allESPHighlights = {}
          
         if nShootBtn then nShootBtn.Visible = manualAimEnabled   end
         if nThrowBtn then nThrowBtn.Visible = throwKnifeEnabled  end
@@ -399,6 +400,36 @@ for _, p in ipairs(Players:GetPlayers()) do
 	end  
 end
 
+local function applyAllESP()
+	if not espAllPlayers then return end
+
+	for _, p in ipairs(Players:GetPlayers()) do
+		if p ~= lp and p.Character then
+
+			local role = roles[p]
+
+			-- FILTER SYSTEM (your toggles control this)
+			if (role == "murder" and not espMurder) then continue end
+			if (role == "sheriff" and not espSheriff) then continue end
+			if (role == "hero" and not espSheriff) then continue end
+			if (role == "innocent" and not espInnocent) then continue end
+
+			-- avoid duplicates
+			if allESPHighlights[p] then continue end
+
+			local hl = Instance.new("Highlight")
+			hl.Name = "GlobalESP"
+			hl.Adornee = p.Character
+			hl.FillColor = Color3.fromRGB(0, 255, 255)
+			hl.OutlineColor = Color3.fromRGB(0, 255, 255)
+			hl.FillTransparency = 0.5
+			hl.OutlineTransparency = 0
+			hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+			hl.Parent = p.Character
+
+			allESPHighlights[p] = hl
+		end
+	end
 end
 
 local function attachLpVisual(p, char, color)
@@ -2084,6 +2115,28 @@ local InfiniteJumpToggle = PlayersTab:Toggle({
 })
 
 -- ── Visuals Tab ───────────────────────────────────────────────────────────────
+local AllPlayersEspToggle = VisualsTab:Toggle({
+    Title = "ESP All Players",
+    Desc = "Base ESP for everyone (filters apply below)",
+    Icon = "eye",
+    Type = "Checkbox",
+    Value = false,
+
+    Callback = function(state)
+        espAllPlayers = state
+        saveConfig()
+
+        if not state then
+            for _, hl in pairs(allESPHighlights) do
+                if hl and hl.Parent then
+                    hl:Destroy()
+                end
+            end
+            allESPHighlights = {}
+        end
+    end
+})
+
 local MurderEspToggle = VisualsTab:Toggle({
     Title    = "Murder ESP",
     Desc     = "Show ESP for the Murderer",
