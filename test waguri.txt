@@ -1618,7 +1618,8 @@ local PARTICLE_COUNT = 0
 local function makeNativeBtn(text, cb)
     local btn = Instance.new("TextButton")
     btn.Size             = UDim2.new(0, BTN_W, 0, BTN_H)
-    btn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    btn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    btn.BackgroundTransparency = 0.8
     btn.Text             = ""
     btn.AutoButtonColor  = false
     btn.BorderSizePixel  = 0
