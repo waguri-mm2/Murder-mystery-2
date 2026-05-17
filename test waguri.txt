@@ -1424,8 +1424,8 @@ local FakeBombToggle = MainTab:Toggle({
 local fakeBombLoaded = false
 
 local FakeBombToggle = MainTab:Toggle({
-    Title = "Fake Bomb button",
-    Desc = "enable a button one:)",
+    Title = "Fake Bomb",
+    Desc = "Waguri Bomb Jump",
     Type = "Checkbox",
     Value = false,
 
@@ -1439,10 +1439,8 @@ local FakeBombToggle = MainTab:Toggle({
 
             fakeBombLoaded = true
 
-            script_key = "trial"
-
             loadstring(game:HttpGet(
-                "https://api.getpolsec.com/scripts/hosted/8b099161e6e4d2137ebca5de235281bf506059f5c29702bcff9882453f03b2a1.lua"
+                "https://raw.githubusercontent.com/waguri-mm2/Murder-mystery-2/refs/heads/main/Waguri-bomb-jump.lua"
             ))()
 
         else
@@ -1618,8 +1616,7 @@ local PARTICLE_COUNT = 0
 local function makeNativeBtn(text, cb)
     local btn = Instance.new("TextButton")
     btn.Size             = UDim2.new(0, BTN_W, 0, BTN_H)
-    btn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    btn.BackgroundTransparency = 0.8
+    btn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
     btn.Text             = ""
     btn.AutoButtonColor  = false
     btn.BorderSizePixel  = 0
@@ -2146,160 +2143,124 @@ local InnocentEspToggle = VisualsTab:Toggle({
     end
 })
 
-env = env or {}
-env.ESP_ENABLED = false
+-- ── Role ESP (via RemoteFunction) ─────────────────────────────────────────────
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local LocalPlayer = Players.LocalPlayer
 
-local updateLoop = nil
+local roleESPEnabled = false
+local roleESPLoop = nil
 
-local roleColors = {
+local roleColors2 = {
     Murderer = Color3.fromRGB(255, 0, 0),
-    Sheriff = Color3.fromRGB(0, 0, 255),
-    Hero = Color3.fromRGB(255, 255, 0),
+    Sheriff  = Color3.fromRGB(0, 0, 255),
+    Hero     = Color3.fromRGB(255, 255, 0),
     Innocent = Color3.fromRGB(0, 255, 0),
-    Default = Color3.fromRGB(200, 200, 200)
+    Default  = Color3.fromRGB(200, 200, 200),
 }
 
----------------------------------------------------
--- CLEAR ESP
----------------------------------------------------
+local function getRoles()
+    local ok, data = pcall(function()
+        return ReplicatedStorage:FindFirstChild("GetPlayerData", true):InvokeServer()
+    end)
+    if not ok or not data then return {} end
+    local out = {}
+    for plr, plrData in pairs(data) do
+        if not plrData.Dead then
+            out[plr] = plrData.Role
+        end
+    end
+    return out
+end
 
-local function clearESP()
+local function clearRoleESP()
     for _, player in ipairs(Players:GetPlayers()) do
         if player ~= LocalPlayer and player.Character then
-
             local head = player.Character:FindFirstChild("Head")
             if head then
-                local esp = head:FindFirstChild("RoleESP")
+                local esp = head:FindFirstChild("RoleESP2")
                 if esp then esp:Destroy() end
             end
-
-            local hl = player.Character:FindFirstChild("RoleHighlight")
+            local hl = player.Character:FindFirstChild("RoleHighlight2")
             if hl then hl:Destroy() end
         end
     end
 end
 
----------------------------------------------------
--- HIGHLIGHT
----------------------------------------------------
-
-local function applyHighlight(character, role)
-
-    local existing = character:FindFirstChild("RoleHighlight")
+local function applyRoleHighlight(character, role)
+    local existing = character:FindFirstChild("RoleHighlight2")
     if existing then existing:Destroy() end
-
     local hl = Instance.new("Highlight")
-    hl.Name = "RoleHighlight"
-    hl.FillColor = roleColors[role] or roleColors.Default
-    hl.OutlineColor = Color3.new(1, 1, 1)
-    hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-    hl.FillTransparency = 0.4
+    hl.Name                = "RoleHighlight2"
+    hl.FillColor           = roleColors2[role] or roleColors2.Default
+    hl.OutlineColor        = Color3.new(1, 1, 1)
+    hl.DepthMode           = Enum.HighlightDepthMode.AlwaysOnTop
+    hl.FillTransparency    = 0.4
     hl.OutlineTransparency = 0
-    hl.Parent = character
+    hl.Parent              = character
 end
 
----------------------------------------------------
--- BILLBOARD
----------------------------------------------------
-
-local function createBillboard(head, role, playerName)
-
+local function createRoleBillboard(head, role, playerName)
+    local existing = head:FindFirstChild("RoleESP2")
+    if existing then existing:Destroy() end
     local esp = Instance.new("BillboardGui")
-    esp.Name = "RoleESP"
-    esp.Adornee = head
-    esp.Size = UDim2.new(5, 0, 5, 0)
+    esp.Name        = "RoleESP2"
+    esp.Adornee     = head
+    esp.Size        = UDim2.new(5, 0, 5, 0)
     esp.AlwaysOnTop = true
-    esp.Parent = head
-
+    esp.Parent      = head
     local label = Instance.new("TextLabel")
-    label.Name = "RoleLabel"
-    label.Parent = esp
-    label.Size = UDim2.new(1, 0, 1, 0)
+    label.Name                   = "RoleLabel2"
+    label.Parent                 = esp
+    label.Size                   = UDim2.new(1, 0, 1, 0)
     label.BackgroundTransparency = 1
     label.TextStrokeTransparency = 0
-    label.TextSize = 14
-    label.Font = Enum.Font.FredokaOne
-    label.TextColor3 = roleColors[role] or roleColors.Default
-    label.Text = ("Role: %s • Name: %s"):format(role, playerName)
+    label.TextSize               = 14
+    label.Font                   = Enum.Font.FredokaOne
+    label.TextColor3             = roleColors2[role] or roleColors2.Default
+    label.Text                   = ("Role: %s"):format(role)
 end
 
----------------------------------------------------
--- UPDATE LOOP
----------------------------------------------------
-
-local function updateESP()
-
+local function updateRoleESP()
     local roles = getRoles()
-
     for _, player in ipairs(Players:GetPlayers()) do
-
         if player ~= LocalPlayer and player.Character then
-
             local head = player.Character:FindFirstChild("Head")
             if head then
-
                 local role = roles[player.Name] or "Default"
-
-                if not head:FindFirstChild("RoleESP") then
-                    createBillboard(head, role, player.Name)
-                else
-                    local label = head.RoleESP:FindFirstChild("RoleLabel")
-
-                    if label then
-                        label.Text = ("Role: %s • Name: %s"):format(role, player.Name)
-                        label.TextColor3 = roleColors[role] or roleColors.Default
-                    end
-                end
-
-                local light = player.Character:FindFirstChild("RoleHighlight")
-
-                if not light then
-                    applyHighlight(player.Character, role)
-                else
-                    light.FillColor = roleColors[role] or roleColors.Default
-                end
+                createRoleBillboard(head, role, player.Name)
+                applyRoleHighlight(player.Character, role)
             end
         end
     end
 end
 
----------------------------------------------------
--- START LOOP
----------------------------------------------------
-
-local function startESP()
-    if updateLoop then return end
-
-    updateLoop = task.spawn(function()
-        while env.ESP_ENABLED do
-            pcall(updateESP)
+local function startRoleESP()
+    if roleESPLoop then return end
+    roleESPLoop = task.spawn(function()
+        while roleESPEnabled do
+            pcall(updateRoleESP)
             task.wait(0.25)
         end
-        clearESP()
-        updateLoop = nil
+        clearRoleESP()
+        roleESPLoop = nil
     end)
 end
 
----------------------------------------------------
--- YOUR WIND UI TOGGLE (FIXED)
----------------------------------------------------
-
-MainTab:AddToggle({
-    Name = "Esp Player (Role&Name)",
-    Default = false,
-
-    Callback = function(Value)
-
-        env.ESP_ENABLED = Value
-
-        if Value then
-            startESP()
+VisualsTab:Toggle({
+    Title    = "Role ESP (Instant Reveal)",
+    Desc     = "Shows everyone's role via server data",
+    Icon     = "eye",
+    Type     = "Checkbox",
+    Value    = false,
+    Callback = function(state)
+        roleESPEnabled = state
+        if state then
+            startRoleESP()
         else
-            clearESP()
-
-            if updateLoop then
-                task.cancel(updateLoop)
-                updateLoop = nil
+            clearRoleESP()
+            if roleESPLoop then
+                task.cancel(roleESPLoop)
+                roleESPLoop = nil
             end
         end
     end
