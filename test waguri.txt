@@ -2382,7 +2382,7 @@ local GunEspToggle = VisualsTab:Toggle({
 AutoFarmTab:Paragraph({
     Title         = "Auto Farm",
     Desc          = "Press the button below to load autofarm.",
-    Color         = "Green",
+    Color         = "Red",
     Thumbnail     = "https://www.roblox.com/asset-thumbnail/image?assetId=80648874729441&width=420&height=420&format=png",
     ThumbnailSize = 140,
 
