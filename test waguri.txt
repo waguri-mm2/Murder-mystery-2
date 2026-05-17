@@ -2237,19 +2237,6 @@ MiscTab:Button({
     Callback = hopToRandom,
 })
 
-local AutofarmTab = Window:Tab({
-    Title = "Auto farm",
-    Icon = "star"
-})
-
-AutofarmTab:Button({
-    Title = "Start Auto Farm",
-    Desc = "Turns on autofarm",
-    Callback = function()
-        print("Autofarm Started")
-    end
-})
-
 -- ── Credits Tab ───────────────────────────────────────────────────────────────
 CreditsTab:Paragraph({
     Title         = "Waguri | Official",
