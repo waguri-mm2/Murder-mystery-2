@@ -1452,7 +1452,7 @@ nFrame.Position               = UDim2.new(1, -6, 0, 52)
 nFrame.Size                   = UDim2.new(0, 124, 1, 0)
 nFrame.Parent                 = nGui
 
--- 🧲 DRAGGABLE BUTTON CONTAINER
+--- 🧲 DRAGGABLE BUTTON CONTAINER
 
 local dragEnabled = true
 
@@ -1463,14 +1463,15 @@ local dragStart
 local startPos
 
 nFrame.InputBegan:Connect(function(input)
+
+	if not dragEnabled then
+		return
+	end
+
 	if input.UserInputType == Enum.UserInputType.MouseButton1
 	or input.UserInputType == Enum.UserInputType.Touch then
 
-		if not dragEnabled then
-	return
-end
-
-dragging = true
+		dragging = true
 		dragStart = input.Position
 		startPos = nFrame.Position
 
@@ -1483,6 +1484,11 @@ dragging = true
 end)
 
 UserInputService.InputChanged:Connect(function(input)
+
+	if not dragEnabled then
+		return
+	end
+
 	if dragging and (
 		input.UserInputType == Enum.UserInputType.MouseMovement
 		or input.UserInputType == Enum.UserInputType.Touch
@@ -1500,8 +1506,6 @@ UserInputService.InputChanged:Connect(function(input)
 end)
 
 -- 🔒 LOCK BUTTON
-
-local dragEnabled = true
 
 local lockBtn = Instance.new("TextButton")
 lockBtn.Name = "DragLock"
