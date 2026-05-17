@@ -1420,7 +1420,7 @@ local FakeBombToggle = MainTab:Toggle({
     end
 })
 
--- ── Red Rectangular Buttons (Like Screenshot) ───────────────────────────────
+-- ── Transparent Red Buttons (Natural Look) ─────────────────────────────────
 local invisNativeLbl = nil
 
 local function setInvisBtn(title)
@@ -1448,8 +1448,8 @@ invisSnd.Parent = nGui
 local nFrame = Instance.new("Frame")
 nFrame.Name = "BtnContainer"
 nFrame.BackgroundTransparency = 1
-nFrame.Size = UDim2.new(0, 230, 0, 260)
-nFrame.Position = UDim2.new(1, -250, 0.25, 0)  -- Right side like screenshot
+nFrame.Size = UDim2.new(0, 235, 0, 265)
+nFrame.Position = UDim2.new(1, -255, 0.22, 0)
 nFrame.Parent = nGui
 
 -- Dragging
@@ -1475,59 +1475,68 @@ nFrame.InputEnded:Connect(function(input)
     end
 end)
 
--- Red Button Function
+-- Natural Transparent Button
 local function makeRedBtn(text, icon, callback)
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1, 0, 0, 52)
-    btn.BackgroundColor3 = Color3.fromRGB(215, 35, 35)
+    btn.Size = UDim2.new(1, 0, 0, 54)
+    btn.BackgroundColor3 = Color3.fromRGB(180, 25, 25)
+    btn.BackgroundTransparency = 0.35   -- Transparency
     btn.Text = ""
     btn.AutoButtonColor = false
     btn.BorderSizePixel = 0
     btn.Parent = nFrame
 
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 10)
+    corner.CornerRadius = UDim.new(0, 12)
     corner.Parent = btn
 
     local stroke = Instance.new("UIStroke")
-    stroke.Color = Color3.fromRGB(255, 85, 85)
-    stroke.Thickness = 1.8
+    stroke.Color = Color3.fromRGB(255, 90, 90)
+    stroke.Thickness = 1.6
+    stroke.Transparency = 0.4
     stroke.Parent = btn
 
     -- Icon
     local iconLbl = Instance.new("TextLabel")
-    iconLbl.Size = UDim2.new(0, 36, 1, 0)
+    iconLbl.Size = UDim2.new(0, 34, 1, 0)
     iconLbl.BackgroundTransparency = 1
     iconLbl.Text = icon
-    iconLbl.TextSize = 24
+    iconLbl.TextSize = 23
     iconLbl.Font = Enum.Font.GothamBold
-    iconLbl.TextColor3 = Color3.new(1,1,1)
+    iconLbl.TextColor3 = Color3.new(1, 1, 1)
     iconLbl.Parent = btn
 
     -- Text
     local textLbl = Instance.new("TextLabel")
-    textLbl.Size = UDim2.new(1, -50, 1, 0)
+    textLbl.Size = UDim2.new(1, -48, 1, 0)
     textLbl.Position = UDim2.new(0, 42, 0, 0)
     textLbl.BackgroundTransparency = 1
     textLbl.Text = text
-    textLbl.TextColor3 = Color3.new(1,1,1)
-    textLbl.TextSize = 16.5
+    textLbl.TextColor3 = Color3.new(1, 1, 1)
+    textLbl.TextSize = 16
     textLbl.Font = Enum.Font.GothamSemibold
     textLbl.TextXAlignment = Enum.TextXAlignment.Left
     textLbl.Parent = btn
 
-    -- Hover & Click
+    -- Hover + Click
     btn.MouseEnter:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(235, 55, 55)}):Play()
+        TweenService:Create(btn, TweenInfo.new(0.2), {
+            BackgroundTransparency = 0.2,
+            BackgroundColor3 = Color3.fromRGB(200, 40, 40)
+        }):Play()
     end)
+
     btn.MouseLeave:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(215, 35, 35)}):Play()
+        TweenService:Create(btn, TweenInfo.new(0.2), {
+            BackgroundTransparency = 0.35,
+            BackgroundColor3 = Color3.fromRGB(180, 25, 25)
+        }):Play()
     end)
 
     btn.MouseButton1Click:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.1), {Size = UDim2.new(1, -8, 0, 48)}):Play()
-        task.delay(0.12, function()
-            TweenService:Create(btn, TweenInfo.new(0.1), {Size = UDim2.new(1, 0, 0, 52)}):Play()
+        TweenService:Create(btn, TweenInfo.new(0.1), {Size = UDim2.new(1, -10, 0, 50)}):Play()
+        task.delay(0.15, function()
+            TweenService:Create(btn, TweenInfo.new(0.15), {Size = UDim2.new(1, 0, 0, 54)}):Play()
         end)
         task.spawn(callback)
     end)
@@ -1553,10 +1562,10 @@ nInvisBtn, invisNativeLbl = makeRedBtn("Invisible", "👁", doInvisToggle)
 -- Layout
 local listLayout = Instance.new("UIListLayout")
 listLayout.SortOrder = Enum.SortOrder.LayoutOrder
-listLayout.Padding = UDim.new(0, 10)
+listLayout.Padding = UDim.new(0, 9)
 listLayout.Parent = nFrame
 
--- Visibility Control
+-- Visibility
 local function updateBtnVisibility()
     if nShootBtn then nShootBtn.Visible = manualAimEnabled end
     if nThrowBtn then nThrowBtn.Visible = throwKnifeEnabled end
@@ -1564,30 +1573,10 @@ local function updateBtnVisibility()
     if nInvisBtn then nInvisBtn.Visible = invisibleEnabled end
 end
 
--- Override Toggle Callbacks
-ManualAimToggle.Callback = function(state)
-    manualAimEnabled = state
-    updateBtnVisibility()
-    saveConfig()
-end
-
-ThrowKnifeToggle.Callback = function(state)
-    throwKnifeEnabled = state
-    updateBtnVisibility()
-    saveConfig()
-end
-
-GrabGunToggle.Callback = function(state)
-    grabGunEnabled = state
-    updateBtnVisibility()
-    saveConfig()
-end
-
-InvisibleToggle.Callback = function(state)
-    invisibleEnabled = state
-    updateBtnVisibility()
-    saveConfig()
-end
+ManualAimToggle.Callback = function(s) manualAimEnabled = s; updateBtnVisibility(); saveConfig() end
+ThrowKnifeToggle.Callback = function(s) throwKnifeEnabled = s; updateBtnVisibility(); saveConfig() end
+GrabGunToggle.Callback = function(s) grabGunEnabled = s; updateBtnVisibility(); saveConfig() end
+InvisibleToggle.Callback = function(s) invisibleEnabled = s; updateBtnVisibility(); saveConfig() end
 
 task.defer(updateBtnVisibility)
 
