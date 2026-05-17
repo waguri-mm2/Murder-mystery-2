@@ -1432,35 +1432,7 @@ local function resetInvisBtn()
 end
 
 -- GUI setup
-local nGui = Instance.new("ScreenGui")
-nGui.Name            = "Waguri_Btns"
-nGui.ResetOnSpawn    = false
-nGui.ZIndexBehavior  = Enum.ZIndexBehavior.Sibling
-nGui.IgnoreGuiInset  = true
-nGui.Parent          = getGuiParent()
-
-invisSnd = Instance.new("Sound")
-invisSnd.SoundId = INVIS_SOUND_ID
-invisSnd.Volume  = 0.5
-invisSnd.Parent  = nGui
-
-local nFrame = Instance.new("Frame")
-nFrame.Name                   = "BtnContainer"
-nFrame.BackgroundTransparency = 1
-nFrame.AnchorPoint            = Vector2.new(1, 0)
-nFrame.Position               = UDim2.new(1, -6, 0, 52)
-nFrame.Size                   = UDim2.new(0, 124, 1, 0)
-nFrame.Parent                 = nGui
-
-local nLayout = Instance.new("UIListLayout")
-nLayout.SortOrder           = Enum.SortOrder.LayoutOrder
-nLayout.Padding             = UDim.new(0, 4)
-nLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
-nLayout.VerticalAlignment   = Enum.VerticalAlignment.Top
-nLayout.Parent              = nFrame
-
--- ==================== SEPARATED & CLEAN BUTTONS ====================
-
+-- ── Native Circular Action Buttons ───────────────────────────────────────────
 local nGui = Instance.new("ScreenGui")
 nGui.Name = "Waguri_Btns"
 nGui.ResetOnSpawn = false
@@ -1473,106 +1445,152 @@ invisSnd.SoundId = INVIS_SOUND_ID
 invisSnd.Volume = 0.5
 invisSnd.Parent = nGui
 
-local Container = Instance.new("Frame")
-Container.Name = "ButtonContainer"
-Container.Size = UDim2.new(0, 240, 0, 320)
-Container.Position = UDim2.new(0.5, -120, 0.35, 0)  -- Center position
-Container.BackgroundTransparency = 1
-Container.Parent = nGui
+-- Main draggable container
+local nFrame = Instance.new("Frame")
+nFrame.Name = "BtnContainer"
+nFrame.BackgroundTransparency = 1
+nFrame.Size = UDim2.new(0, 280, 0, 80)  -- Wide enough for horizontal layout
+nFrame.Position = UDim2.new(0, 20, 1, -120)  -- Bottom-Left position (change as you like)
+nFrame.Parent = nGui
 
--- Draggable
+-- Make container draggable
 local dragging, dragInput, dragStart, startPos
-Container.InputBegan:Connect(function(input)
+local function updateDrag(input)
+    local delta = input.Position - dragStart
+    nFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+end
+
+nFrame.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         dragging = true
         dragStart = input.Position
-        startPos = Container.Position
+        startPos = nFrame.Position
+        
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
     end
 end)
-Container.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = false
-    end
-end)
-Container.InputChanged:Connect(function(input)
+
+nFrame.InputChanged:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
         dragInput = input
     end
 end)
+
 RunService.RenderStepped:Connect(function()
     if dragging and dragInput then
-        local delta = dragInput.Position - dragStart
-        Container.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        updateDrag(dragInput)
     end
 end)
 
-local function createBtn(text, callback, yPos)
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, 0, 0, 58)
-    frame.Position = UDim2.new(0, 0, 0, yPos)
-    frame.BackgroundColor3 = Color3.fromRGB(22, 28, 48)
-    frame.Parent = Container
+-- Button settings
+local BTN_SIZE = 65
+local function makeCircularBtn(text, cb, color)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0, BTN_SIZE, 0, BTN_SIZE)
+    btn.BackgroundColor3 = color or Color3.fromRGB(20, 20, 20)
+    btn.Text = ""
+    btn.AutoButtonColor = false
+    btn.BorderSizePixel = 0
+    btn.Parent = nFrame
 
-    local corner = Instance.new("UICorner", frame)
-    corner.CornerRadius = UDim.new(0, 12)
+    -- Perfect circle
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0.5, 0)
+    corner.Parent = btn
 
-    local stroke = Instance.new("UIStroke", frame)
-    stroke.Color = Color3.fromRGB(80, 220, 150)
+    -- Stroke
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = Color3.fromRGB(255, 60, 60)
     stroke.Thickness = 2.5
-    stroke.Transparency = 0.2
+    stroke.Transparency = 0.1
+    stroke.Parent = btn
 
-    local btn = Instance.new("TextButton", frame)
-    btn.Size = UDim2.new(1, 0, 1, 0)
-    btn.BackgroundTransparency = 1
-    btn.Text = text
-    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    btn.Font = Enum.Font.GothamSemibold
-    btn.TextSize = 16
-    btn.TextXAlignment = Enum.TextXAlignment.Center
+    -- Glow
+    local glow = Instance.new("UIStroke")
+    glow.Color = color or Color3.fromRGB(255, 80, 80)
+    glow.Thickness = 6
+    glow.Transparency = 0.7
+    glow.Parent = btn
 
-    btn.MouseButton1Click:Connect(function() task.spawn(callback) end)
-    btn.TouchTap:Connect(function() task.spawn(callback) end)
+    -- Label
+    local lbl = Instance.new("TextLabel")
+    lbl.Size = UDim2.new(1, 0, 1, 0)
+    lbl.BackgroundTransparency = 1
+    lbl.Text = text
+    lbl.TextColor3 = Color3.fromRGB(255, 255, 255)
+    lbl.TextSize = 13
+    lbl.Font = Enum.Font.GothamSemibold
+    lbl.TextWrapped = true
+    lbl.Parent = btn
 
-    return frame
+    -- Simple hover effect
+    btn.MouseEnter:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.15), {Size = UDim2.new(0, BTN_SIZE+8, 0, BTN_SIZE+8)}):Play()
+        TweenService:Create(stroke, TweenInfo.new(0.2), {Thickness = 3.5}):Play()
+    end)
+    
+    btn.MouseLeave:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.2), {Size = UDim2.new(0, BTN_SIZE, 0, BTN_SIZE)}):Play()
+        TweenService:Create(stroke, TweenInfo.new(0.2), {Thickness = 2.5}):Play()
+    end)
+
+    -- Click effect
+    btn.MouseButton1Down:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.1), {Size = UDim2.new(0, BTN_SIZE-6, 0, BTN_SIZE-6)}):Play()
+    end)
+    
+    btn.MouseButton1Up:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.15), {Size = UDim2.new(0, BTN_SIZE, 0, BTN_SIZE)}):Play()
+        task.spawn(cb)
+    end)
+
+    return btn, lbl
 end
 
--- Create buttons with good spacing
-nShootBtn = createBtn("Shoot Murderer", doSingleShot, 0)
-nThrowBtn = createBtn("Throw Knife", function()
+-- Create buttons horizontally
+local spacing = 12
+local startX = 0
+
+nShootBtn = makeCircularBtn("SHOOT", function()
+    pcall(doSingleShot)
+end, Color3.fromRGB(180, 0, 0))
+
+nShootBtn.Position = UDim2.new(0, startX, 0, 0)
+startX += BTN_SIZE + spacing
+
+nThrowBtn = makeCircularBtn("THROW", function()
     if not isLpMurd then
-        WindUI:Notify({Title = "Error", Content = "You are not the Murderer.", Duration = 2, Icon = "x"})
+        WindUI:Notify({ Title = "Throw Knife", Content = "You are not the Murderer.", Duration = 2, Icon = "x" })
         return
     end
-    doThrowKnife()
-end, 65)
+    pcall(doThrowKnife)
+end, Color3.fromRGB(200, 100, 0))
+nThrowBtn.Position = UDim2.new(0, startX, 0, 0)
+startX += BTN_SIZE + spacing
 
-nGrabBtn = createBtn("Grab Gun", doGrabGun, 130)
-nInvisBtn = createBtn("Invisible", doInvisToggle, 195)
+nGrabBtn = makeCircularBtn("GRAB", function()
+    pcall(doGrabGun)
+end, Color3.fromRGB(0, 140, 255))
+nGrabBtn.Position = UDim2.new(0, startX, 0, 0)
+startX += BTN_SIZE + spacing
 
--- Default hidden
-nShootBtn.Visible = false
-nThrowBtn.Visible = false
-nGrabBtn.Visible = false
-nInvisBtn.Visible = false
+nInvisBtn, invisNativeLbl = makeCircularBtn("INVIS", doInvisToggle, Color3.fromRGB(120, 0, 200))
+nInvisBtn.Position = UDim2.new(0, startX, 0, 0)
 
--- Create Buttons
-nShootBtn = makeNativeBtn("Shoot Murderer", doSingleShot)
-nShootBtn.Visible = false
+-- Visibility control
+local function updateBtnVisibility()
+    if nShootBtn then nShootBtn.Visible = manualAimEnabled end
+    if nThrowBtn then nThrowBtn.Visible = throwKnifeEnabled end
+    if nGrabBtn then nGrabBtn.Visible = grabGunEnabled end
+    if nInvisBtn then nInvisBtn.Visible = invisibleEnabled end
+end
 
-nThrowBtn = makeNativeBtn("Throw Knife", function()
-    if not isLpMurd then
-        WindUI:Notify({Title = "Error", Content = "You are not the Murderer.", Duration = 2, Icon = "x"})
-        return
-    end
-    doThrowKnife()
-end)
-nThrowBtn.Visible = false
-
-nGrabBtn = makeNativeBtn("Grab Gun", doGrabGun)
-nGrabBtn.Visible = false
-
-nInvisBtn = makeNativeBtn("Invisible", doInvisToggle)
-nInvisBtn.Visible = false
+-- Call this after toggles
+updateBtnVisibility()
 
 -- Shoot Murd
 nShootBtn = (function()
@@ -2395,7 +2413,7 @@ Window:Tag({
 WindUI:Popup({
     Title   = "MM2 Waguri",
     Icon    = "sword",
-    Content = "Updates: waguri hub ofc", -- always tell me to change this
+    Content = "Updates: Native action buttons (top-right), Kill All removed.", -- always tell me to change this
     Buttons = {
         {
             Title    = "Close",
