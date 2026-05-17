@@ -1477,7 +1477,7 @@ nFrame.InputBegan:Connect(function(input)
 end)
 
 UserInputService.InputChanged:Connect(function(input)
-	if dragging and (
+	if dragEnabled and dragging and (
 		input.UserInputType == Enum.UserInputType.MouseMovement
 		or input.UserInputType == Enum.UserInputType.Touch
 	) then
@@ -1490,6 +1490,39 @@ UserInputService.InputChanged:Connect(function(input)
 			startPos.Y.Scale,
 			startPos.Y.Offset + delta.Y
 		)
+	end
+end)
+
+-- 🔒 DRAG LOCK BUTTON
+
+local dragEnabled = true
+
+local lockBtn = Instance.new("TextButton")
+lockBtn.Size = UDim2.new(0, 40, 0, 40)
+lockBtn.Position = UDim2.new(0, -50, 0, 0)
+lockBtn.BackgroundColor3 = Color3.fromRGB(20,20,20)
+lockBtn.Text = "🔓"
+lockBtn.TextSize = 18
+lockBtn.Font = Enum.Font.GothamBold
+lockBtn.TextColor3 = Color3.fromRGB(255,255,255)
+lockBtn.BorderSizePixel = 0
+lockBtn.Parent = nFrame
+
+Instance.new("UICorner", lockBtn).CornerRadius = UDim.new(0,10)
+
+local stroke = Instance.new("UIStroke")
+stroke.Color = Color3.fromRGB(255,0,0)
+stroke.Thickness = 1.5
+stroke.Parent = lockBtn
+
+-- TOGGLE LOCK
+lockBtn.MouseButton1Click:Connect(function()
+	dragEnabled = not dragEnabled
+
+	if dragEnabled then
+		lockBtn.Text = "🔓"
+	else
+		lockBtn.Text = "🔒"
 	end
 end)
 
