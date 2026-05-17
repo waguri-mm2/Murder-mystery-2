@@ -2130,39 +2130,6 @@ local GunEspToggle = VisualsTab:Toggle({
     end
 })
 
--- ── Auto Farm Tab ─────────────────────────────────────────────────────────────
-
-AutoFarmTab:Paragraph({
-    Title         = "Auto Farm",
-    Desc          = "Press the button below to load autofarm.",
-    Color         = "Green",
-    Thumbnail     = "https://www.roblox.com/asset-thumbnail/image?assetId=80648874729441&width=420&height=420&format=png",
-    ThumbnailSize = 140,
-
-    Buttons = {
-        {
-            Icon  = "play",
-            Title = "Start Auto Farm",
-
-            Callback = function()
-
-                WindUI:Notify({
-                    Title = "Auto Farm",
-                    Content = "Loading autofarm...",
-                    Duration = 3,
-                    Icon = "loader"
-                })
-
-                loadstring(game:HttpGet(
-                    "https://pastefy.app/pBWtDYvc/raw",
-                    true
-                ))()
-
-            end,
-        }
-    }
-})
-
 -- ── Misc Tab ──────────────────────────────────────────────────────────────────
 
 local TeleportService = game:GetService("TeleportService")
