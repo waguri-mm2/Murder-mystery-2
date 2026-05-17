@@ -1459,9 +1459,7 @@ nLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
 nLayout.VerticalAlignment   = Enum.VerticalAlignment.Top
 nLayout.Parent              = nFrame
 
--- ==================== CLEAN DRAGGABLE BUTTONS ====================
-
--- ==================== NEW CLEAN BUTTONS (Like your example) ====================
+-- ==================== SEPARATED & CLEAN BUTTONS ====================
 
 local nGui = Instance.new("ScreenGui")
 nGui.Name = "Waguri_Btns"
@@ -1475,29 +1473,28 @@ invisSnd.SoundId = INVIS_SOUND_ID
 invisSnd.Volume = 0.5
 invisSnd.Parent = nGui
 
--- Main Container (centered, draggable)
-local MainContainer = Instance.new("Frame")
-MainContainer.Name = "ButtonContainer"
-MainContainer.Size = UDim2.new(0, 240, 0, 300)
-MainContainer.Position = UDim2.new(0.5, -120, 0.4, 0)
-MainContainer.BackgroundTransparency = 1
-MainContainer.Parent = nGui
+local Container = Instance.new("Frame")
+Container.Name = "ButtonContainer"
+Container.Size = UDim2.new(0, 240, 0, 320)
+Container.Position = UDim2.new(0.5, -120, 0.35, 0)  -- Center position
+Container.BackgroundTransparency = 1
+Container.Parent = nGui
 
--- Make whole group draggable
+-- Draggable
 local dragging, dragInput, dragStart, startPos
-MainContainer.InputBegan:Connect(function(input)
+Container.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         dragging = true
         dragStart = input.Position
-        startPos = MainContainer.Position
+        startPos = Container.Position
     end
 end)
-MainContainer.InputEnded:Connect(function(input)
+Container.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         dragging = false
     end
 end)
-MainContainer.InputChanged:Connect(function(input)
+Container.InputChanged:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
         dragInput = input
     end
@@ -1505,43 +1502,43 @@ end)
 RunService.RenderStepped:Connect(function()
     if dragging and dragInput then
         local delta = dragInput.Position - dragStart
-        MainContainer.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        Container.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
     end
 end)
 
-local function createButton(text, callback, yOffset)
+local function createBtn(text, callback, yPos)
     local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, 0, 0, 55)
-    frame.Position = UDim2.new(0, 0, 0, yOffset)
-    frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-    frame.Parent = MainContainer
+    frame.Size = UDim2.new(1, 0, 0, 58)
+    frame.Position = UDim2.new(0, 0, 0, yPos)
+    frame.BackgroundColor3 = Color3.fromRGB(22, 28, 48)
+    frame.Parent = Container
 
     local corner = Instance.new("UICorner", frame)
-    corner.CornerRadius = UDim.new(0, 10)
+    corner.CornerRadius = UDim.new(0, 12)
 
     local stroke = Instance.new("UIStroke", frame)
-    stroke.Color = Color3.fromRGB(0, 170, 255)
-    stroke.Thickness = 2
+    stroke.Color = Color3.fromRGB(80, 220, 150)
+    stroke.Thickness = 2.5
+    stroke.Transparency = 0.2
 
-    local btn = Instance.new("TextButton")
+    local btn = Instance.new("TextButton", frame)
     btn.Size = UDim2.new(1, 0, 1, 0)
     btn.BackgroundTransparency = 1
     btn.Text = text
     btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    btn.Font = Enum.Font.GothamBold
-    btn.TextSize = 15
-    btn.Parent = frame
+    btn.Font = Enum.Font.GothamSemibold
+    btn.TextSize = 16
+    btn.TextXAlignment = Enum.TextXAlignment.Center
 
-    btn.MouseButton1Click:Connect(function()
-        task.spawn(callback)
-    end)
+    btn.MouseButton1Click:Connect(function() task.spawn(callback) end)
+    btn.TouchTap:Connect(function() task.spawn(callback) end)
 
     return frame
 end
 
--- Create Buttons (with spacing)
-nShootBtn = createButton("Shoot Murderer", doSingleShot, 0)
-nThrowBtn = createButton("Throw Knife", function()
+-- Create buttons with good spacing
+nShootBtn = createBtn("Shoot Murderer", doSingleShot, 0)
+nThrowBtn = createBtn("Throw Knife", function()
     if not isLpMurd then
         WindUI:Notify({Title = "Error", Content = "You are not the Murderer.", Duration = 2, Icon = "x"})
         return
@@ -1549,10 +1546,10 @@ nThrowBtn = createButton("Throw Knife", function()
     doThrowKnife()
 end, 65)
 
-nGrabBtn = createButton("Grab Gun", doGrabGun, 130)
-nInvisBtn = createButton("Invisible", doInvisToggle, 195)
+nGrabBtn = createBtn("Grab Gun", doGrabGun, 130)
+nInvisBtn = createBtn("Invisible", doInvisToggle, 195)
 
--- Default visibility
+-- Default hidden
 nShootBtn.Visible = false
 nThrowBtn.Visible = false
 nGrabBtn.Visible = false
