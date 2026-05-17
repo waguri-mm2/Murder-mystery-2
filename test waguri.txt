@@ -1420,7 +1420,7 @@ local FakeBombToggle = MainTab:Toggle({
     end
 })
 
--- ── Native Action Buttons (top-right, red, mobile-friendly) ───────────────────
+-- ── Red Rectangular Buttons (Like Screenshot) ───────────────────────────────
 local invisNativeLbl = nil
 
 local function setInvisBtn(title)
@@ -1433,375 +1433,163 @@ end
 
 -- GUI setup
 local nGui = Instance.new("ScreenGui")
-nGui.Name            = "Waguri_Btns"
-nGui.ResetOnSpawn    = false
-nGui.ZIndexBehavior  = Enum.ZIndexBehavior.Sibling
-nGui.IgnoreGuiInset  = true
-nGui.Parent          = getGuiParent()
+nGui.Name = "Waguri_Btns"
+nGui.ResetOnSpawn = false
+nGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+nGui.IgnoreGuiInset = true
+nGui.Parent = getGuiParent()
 
 invisSnd = Instance.new("Sound")
 invisSnd.SoundId = INVIS_SOUND_ID
-invisSnd.Volume  = 0.5
-invisSnd.Parent  = nGui
+invisSnd.Volume = 0.5
+invisSnd.Parent = nGui
 
+-- Draggable Container
 local nFrame = Instance.new("Frame")
-nFrame.Name                   = "BtnContainer"
+nFrame.Name = "BtnContainer"
 nFrame.BackgroundTransparency = 1
-nFrame.AnchorPoint            = Vector2.new(1, 0)
-nFrame.Position               = UDim2.new(1, -6, 0, 52)
-nFrame.Size                   = UDim2.new(0, 124, 1, 0)
-nFrame.Parent                 = nGui
+nFrame.Size = UDim2.new(0, 230, 0, 260)
+nFrame.Position = UDim2.new(1, -250, 0.25, 0)  -- Right side like screenshot
+nFrame.Parent = nGui
 
-local nLayout = Instance.new("UIListLayout")
-nLayout.SortOrder           = Enum.SortOrder.LayoutOrder
-nLayout.Padding             = UDim.new(0, 4)
-nLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
-nLayout.VerticalAlignment   = Enum.VerticalAlignment.Top
-nLayout.Parent              = nFrame
+-- Dragging
+local dragging, dragStart, startPos
+nFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = nFrame.Position
+    end
+end)
 
-local BTN_W          = 160
-local BTN_H          = 45
-local PARTICLE_COUNT = 20
+nFrame.InputChanged:Connect(function(input)
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - dragStart
+        nFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
 
-local function makeNativeBtn(text, cb)
+nFrame.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = false
+    end
+end)
+
+-- Red Button Function
+local function makeRedBtn(text, icon, callback)
     local btn = Instance.new("TextButton")
-    btn.Size             = UDim2.new(0, BTN_W, 0, BTN_H)
-    btn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    btn.Text             = ""
-    btn.AutoButtonColor  = false
-    btn.BorderSizePixel  = 0
-    btn.Parent           = nFrame
+    btn.Size = UDim2.new(1, 0, 0, 52)
+    btn.BackgroundColor3 = Color3.fromRGB(215, 35, 35)
+    btn.Text = ""
+    btn.AutoButtonColor = false
+    btn.BorderSizePixel = 0
+    btn.Parent = nFrame
 
-    local corner = Instance.new("UICorner", btn)
-    corner.CornerRadius = UDim.new(0, 8)
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 10)
+    corner.Parent = btn
 
-    local stroke = Instance.new("UIStroke", btn)
-    stroke.Color        = Color3.fromRGB(255, 0, 0)
-    stroke.Thickness    = 1.5
-    stroke.Transparency = 0
-    stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = Color3.fromRGB(255, 85, 85)
+    stroke.Thickness = 1.8
+    stroke.Parent = btn
 
-    -- Inner glow frame (simulates bloom behind stroke)
-    local glow = Instance.new("Frame", btn)
-    glow.Size                   = UDim2.new(1, 0, 1, 0)
-    glow.BackgroundTransparency = 1
-    glow.ZIndex                 = 0
-    Instance.new("UICorner", glow).CornerRadius = UDim.new(0, 8)
-    local glowStroke = Instance.new("UIStroke", glow)
-    glowStroke.Thickness    = 4
-    glowStroke.Transparency = 0.72
-    glowStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    -- Icon
+    local iconLbl = Instance.new("TextLabel")
+    iconLbl.Size = UDim2.new(0, 36, 1, 0)
+    iconLbl.BackgroundTransparency = 1
+    iconLbl.Text = icon
+    iconLbl.TextSize = 24
+    iconLbl.Font = Enum.Font.GothamBold
+    iconLbl.TextColor3 = Color3.new(1,1,1)
+    iconLbl.Parent = btn
 
-    -- Scale instance for hover/press
-    local sc = Instance.new("UIScale", btn)
-    sc.Scale = 1
+    -- Text
+    local textLbl = Instance.new("TextLabel")
+    textLbl.Size = UDim2.new(1, -50, 1, 0)
+    textLbl.Position = UDim2.new(0, 42, 0, 0)
+    textLbl.BackgroundTransparency = 1
+    textLbl.Text = text
+    textLbl.TextColor3 = Color3.new(1,1,1)
+    textLbl.TextSize = 16.5
+    textLbl.Font = Enum.Font.GothamSemibold
+    textLbl.TextXAlignment = Enum.TextXAlignment.Left
+    textLbl.Parent = btn
 
-    -- Clip frame for particles
-    local clip = Instance.new("Frame", btn)
-    clip.Size                   = UDim2.new(1, 0, 1, 0)
-    clip.BackgroundTransparency = 1
-    clip.ClipsDescendants       = true
-    clip.ZIndex                 = 1
-    Instance.new("UICorner", clip).CornerRadius = UDim.new(0, 8)
-
-    -- Particles
-    local pData = {}
-    local rng   = Random.new()
-    for i = 1, PARTICLE_COUNT do
-        local sz = rng:NextInteger(2, 5)
-        local f  = Instance.new("Frame", clip)
-        f.Size                   = UDim2.new(0, sz, 0, sz)
-        f.BorderSizePixel        = 0
-        f.BackgroundColor3       = Color3.fromHSV(i / PARTICLE_COUNT, 1, 1)
-        f.BackgroundTransparency = rng:NextNumber(0, 0.25)
-        f.ZIndex                 = 1
-        Instance.new("UICorner", f).CornerRadius = UDim.new(1, 0)
-        local px = rng:NextInteger(0, BTN_W - sz)
-        local py = rng:NextInteger(0, BTN_H - sz)
-        f.Position = UDim2.new(0, px, 0, py)
-        pData[i] = {
-            f   = f,
-            x   = px, y   = py,
-            vx  = rng:NextNumber(-20, 20),
-            vy  = rng:NextNumber(-20, 20),
-            hue = i / PARTICLE_COUNT,
-            dh  = rng:NextNumber(0.08, 0.25) * (rng:NextNumber() < 0.5 and 1 or -1),
-            sz  = sz,
-        }
-    end
-
-    local lbl = Instance.new("TextLabel", btn)
-    lbl.Size                   = UDim2.new(1, -8, 1, 0)
-    lbl.Position               = UDim2.new(0, 4, 0, 0)
-    lbl.BackgroundTransparency = 1
-    lbl.Text                   = text
-    lbl.TextColor3             = Color3.fromRGB(255, 255, 255)
-    lbl.TextSize               = 13
-    lbl.Font                   = Enum.Font.GothamBold
-    lbl.TextTruncate           = Enum.TextTruncate.AtEnd
-    lbl.TextXAlignment         = Enum.TextXAlignment.Center
-    lbl.ZIndex                 = 3
-
-    -- Animation state
-    local strokeHue    = 0
-    local clickX, clickY  = 0, 0
-    local clickActive     = false
-    local clickT          = 0
-    local scattered       = false
-    local isHovered       = false
-    local GATHER_T        = 0.22
-    local SCATTER_T       = 0.45
-    local MAX_FLOAT_SPEED = 38
-    local HUE_SPEED       = 0.55  -- full cycle per second
-
-    -- Hover tweens
-    local tweenHoverIn  = TweenService:Create(sc,
-        TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-        { Scale = 1.05 })
-    local tweenHoverOut = TweenService:Create(sc,
-        TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-        { Scale = 1.0 })
-    local tweenPressIn  = TweenService:Create(sc,
-        TweenInfo.new(0.07, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-        { Scale = 0.93 })
-    local tweenPressOut = TweenService:Create(sc,
-        TweenInfo.new(0.14, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
-        { Scale = isHovered and 1.05 or 1.0 })
-
+    -- Hover & Click
     btn.MouseEnter:Connect(function()
-        isHovered = true
-        tweenHoverIn:Play()
-        TweenService:Create(stroke,
-            TweenInfo.new(0.15, Enum.EasingStyle.Quad),
-            { Thickness = 2.2 }):Play()
-        TweenService:Create(glowStroke,
-            TweenInfo.new(0.15, Enum.EasingStyle.Quad),
-            { Transparency = 0.45 }):Play()
+        TweenService:Create(btn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(235, 55, 55)}):Play()
     end)
-
     btn.MouseLeave:Connect(function()
-        isHovered = false
-        tweenHoverOut:Play()
-        TweenService:Create(stroke,
-            TweenInfo.new(0.18, Enum.EasingStyle.Quad),
-            { Thickness = 1.5 }):Play()
-        TweenService:Create(glowStroke,
-            TweenInfo.new(0.18, Enum.EasingStyle.Quad),
-            { Transparency = 0.72 }):Play()
+        TweenService:Create(btn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(215, 35, 35)}):Play()
     end)
 
-    btn.InputBegan:Connect(function(inp)
-        if inp.UserInputType ~= Enum.UserInputType.MouseButton1
-        and inp.UserInputType ~= Enum.UserInputType.Touch then return end
-        tweenPressIn:Play()
-        local ap = btn.AbsolutePosition
-        clickX      = inp.Position.X - ap.X
-        clickY      = inp.Position.Y - ap.Y
-        clickActive = true
-        clickT      = tick()
-        scattered   = false
+    btn.MouseButton1Click:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.1), {Size = UDim2.new(1, -8, 0, 48)}):Play()
+        task.delay(0.12, function()
+            TweenService:Create(btn, TweenInfo.new(0.1), {Size = UDim2.new(1, 0, 0, 52)}):Play()
+        end)
+        task.spawn(callback)
     end)
 
-    btn.InputEnded:Connect(function(inp)
-        if inp.UserInputType ~= Enum.UserInputType.MouseButton1
-        and inp.UserInputType ~= Enum.UserInputType.Touch then return end
-        TweenService:Create(sc,
-            TweenInfo.new(0.14, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
-            { Scale = isHovered and 1.05 or 1.0 }):Play()
-    end)
-
-    local conn
-    conn = RunService.Heartbeat:Connect(function(dt)
-        if not btn.Parent then conn:Disconnect() return end
-
-        -- RGB stroke cycle
-        strokeHue = (strokeHue + HUE_SPEED * dt) % 1
-        local rgb = Color3.fromHSV(strokeHue, 1, 1)
-        stroke.Color     = rgb
-        glowStroke.Color = rgb
-
-        local elapsed = clickActive and (tick() - clickT) or math.huge
-        if clickActive and elapsed >= GATHER_T + SCATTER_T then
-            clickActive = false
-        end
-
-        for _, pd in ipairs(pData) do
-            pd.hue = (pd.hue + pd.dh * dt) % 1
-            pd.f.BackgroundColor3 = Color3.fromHSV(pd.hue, 1, 1)
-
-            if clickActive and elapsed < GATHER_T then
-                pd.x = pd.x + (clickX - pd.x) * (9 * dt)
-                pd.y = pd.y + (clickY - pd.y) * (9 * dt)
-
-            elseif clickActive and elapsed >= GATHER_T then
-                if not scattered then
-                    scattered = true
-                    for _, pd2 in ipairs(pData) do
-                        local a = rng:NextNumber(0, math.pi * 2)
-                        local s = rng:NextNumber(90, 220)
-                        pd2.vx = math.cos(a) * s
-                        pd2.vy = math.sin(a) * s
-                    end
-                end
-                pd.x  = pd.x + pd.vx * dt
-                pd.y  = pd.y + pd.vy * dt
-                pd.vx = pd.vx * (1 - dt * 4)
-                pd.vy = pd.vy * (1 - dt * 4)
-
-            else
-                pd.x = pd.x + pd.vx * dt
-                pd.y = pd.y + pd.vy * dt
-                if pd.x < 0 then
-                    pd.vx = math.abs(pd.vx) pd.x = 0
-                elseif pd.x > BTN_W - pd.sz then
-                    pd.vx = -math.abs(pd.vx) pd.x = BTN_W - pd.sz
-                end
-                if pd.y < 0 then
-                    pd.vy = math.abs(pd.vy) pd.y = 0
-                elseif pd.y > BTN_H - pd.sz then
-                    pd.vy = -math.abs(pd.vy) pd.y = BTN_H - pd.sz
-                end
-                if rng:NextNumber() < 0.015 then
-                    pd.vx = pd.vx + rng:NextNumber(-8, 8)
-                    pd.vy = pd.vy + rng:NextNumber(-8, 8)
-                    local spd = math.sqrt(pd.vx * pd.vx + pd.vy * pd.vy)
-                    if spd > MAX_FLOAT_SPEED then
-                        local inv = MAX_FLOAT_SPEED / spd
-                        pd.vx = pd.vx * inv
-                        pd.vy = pd.vy * inv
-                    end
-                end
-            end
-
-            pd.f.Position = UDim2.new(0, pd.x, 0, pd.y)
-        end
-    end)
-
-    local firing = false
-    local function onRelease()
-        if firing then return end
-        firing = true
-        task.spawn(cb)
-        task.delay(0.5, function() firing = false end)
-    end
-
-    btn.MouseButton1Up:Connect(onRelease)
-    btn.TouchTap:Connect(onRelease)
-
-    return btn, lbl
+    return btn
 end
 
--- Shoot Murd
-nShootBtn = (function()
-    local btn = makeNativeBtn("Shoot Murd", function()
-        local ok, err = pcall(doSingleShot)
-        if not ok then warn("[Waguri] ShootMurd: " .. tostring(err)) end
-    end)
-    btn.Visible = false
-    return btn
-end)()
+-- Create Buttons
+nShootBtn = makeRedBtn("Shoot Murd", "🎯", doSingleShot)
 
--- Throw Knife
-nThrowBtn = (function()
-    local btn = makeNativeBtn("Throw Knife", function()
-        if not isLpMurd then
-            WindUI:Notify({ Title = "Throw Knife", Content = "You are not the Murderer.", Duration = 2, Icon = "x" })
-            return
-        end
-        local ok, err = pcall(doThrowKnife)
-        if not ok then warn("[Waguri] ThrowKnife: " .. tostring(err)) end
-    end)
-    btn.Visible = false
-    return btn
-end)()
-
--- Grab Gun
-nGrabBtn = (function()
-    local btn = makeNativeBtn("Grab Gun", function()
-        local ok, err = pcall(doGrabGun)
-        if not ok then warn("[Waguri] GrabGun: " .. tostring(err)) end
-    end)
-    btn.Visible = false
-    return btn
-end)()
-
-local function setCharTransparency(char, t)
-    for _, v in ipairs(char:GetDescendants()) do
-        if v:IsA("BasePart") or v:IsA("Decal") then
-            v.Transparency = t
-        end
+nThrowBtn = makeRedBtn("Throw Knife", "🔪", function()
+    if not isLpMurd then
+        WindUI:Notify({ Title = "Throw Knife", Content = "You are not the Murderer.", Duration = 2, Icon = "x" })
+        return
     end
+    doThrowKnife()
+end)
+
+nGrabBtn = makeRedBtn("Grab Gun", "⚡", doGrabGun)
+
+nInvisBtn, invisNativeLbl = makeRedBtn("Invisible", "👁", doInvisToggle)
+
+-- Layout
+local listLayout = Instance.new("UIListLayout")
+listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+listLayout.Padding = UDim.new(0, 10)
+listLayout.Parent = nFrame
+
+-- Visibility Control
+local function updateBtnVisibility()
+    if nShootBtn then nShootBtn.Visible = manualAimEnabled end
+    if nThrowBtn then nThrowBtn.Visible = throwKnifeEnabled end
+    if nGrabBtn then nGrabBtn.Visible = grabGunEnabled end
+    if nInvisBtn then nInvisBtn.Visible = invisibleEnabled end
 end
 
-local function doInvisToggle()
-    if invisActive then
-        WindUI:Notify({ Title = "Invisible", Content = "Invisible is currently in action, Please wait!.", Duration = 3, Icon = "x" })
-        return
-    end
-    invisActive = true
-    if not invisibleEnabled then
-        WindUI:Notify({ Title = "Invisible", Content = "Enable Invisible toggle first.", Duration = 3, Icon = "x" })
-        return
-    end
-    local char = lp.Character
-    if not char then
-        WindUI:Notify({ Title = "Invisible", Content = "No character found.", Duration = 3, Icon = "x" })
-        return
-    end
-    if invisSnd then invisSnd:Play() end
-
-    if not isInvisible then
-        local hrp = char:FindFirstChild("HumanoidRootPart")
-        if not hrp then return end
-        local savedCF = hrp.CFrame
-        local torso   = char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso")
-        if not torso then return end
-
-        local hidePos = Vector3.new(0, 10000, 0)
-
-        char:MoveTo(hidePos)
-        task.wait(0.15)
-
-        local seat = Instance.new("Seat")
-        seat.Name        = "Waguri_InvisChair"
-        seat.Anchored    = false
-        seat.CanCollide  = false
-        seat.Transparency = 1
-        seat.Position    = hidePos
-        seat.Parent      = workspace
-
-        local weld  = Instance.new("Weld")
-        weld.Part0  = seat
-        weld.Part1  = torso
-        weld.Parent = seat
-
-        task.wait()
-        seat.CFrame = savedCF
-        invisSeat   = seat
-
-        setCharTransparency(char, 0.6)
-
-        isInvisible = true
-        setInvisBtn("[ON] Invisible")
-    else
-        if invisSeat and invisSeat.Parent then invisSeat:Destroy() end
-        local stray = workspace:FindFirstChild("Waguri_InvisChair")
-        if stray then stray:Destroy() end
-        local hrp = workspace[lp.Name]:FindFirstChild("HumanoidRootPart")
-        invisSeat = nil
-
-        setCharTransparency(char, 0)
-        local hrp = char:FindFirstChild("HumanoidRootPart")
-        if hrp then hrp.Transparency = 0 end
-
-        isInvisible = false
-        resetInvisBtn()
-    end
-    invisActive = false
+-- Override Toggle Callbacks
+ManualAimToggle.Callback = function(state)
+    manualAimEnabled = state
+    updateBtnVisibility()
+    saveConfig()
 end
 
-nInvisBtn, invisNativeLbl = makeNativeBtn("Invisible", doInvisToggle)
-nInvisBtn.Visible = false
+ThrowKnifeToggle.Callback = function(state)
+    throwKnifeEnabled = state
+    updateBtnVisibility()
+    saveConfig()
+end
+
+GrabGunToggle.Callback = function(state)
+    grabGunEnabled = state
+    updateBtnVisibility()
+    saveConfig()
+end
+
+InvisibleToggle.Callback = function(state)
+    invisibleEnabled = state
+    updateBtnVisibility()
+    saveConfig()
+end
+
+task.defer(updateBtnVisibility)
 
 local function applyWalkSpeed(value)
     local n = tonumber(value)
