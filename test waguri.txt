@@ -195,6 +195,7 @@ Window:EditOpenButton({
     Draggable       = true,
 })
 
+local HomeTab     = Window:Tab({ Title = "Home",     Icon = "home"    })
 local MainTab     = Window:Tab({ Title = "Main",     Icon = "sword"    })
 local PlayersTab  = Window:Tab({ Title = "Players",  Icon = "users"    })
 local VisualsTab  = Window:Tab({ Title = "Visuals",  Icon = "eye"      })
@@ -1325,6 +1326,83 @@ local function doKillAll()
     if not ok then warn("[Waguri] KillAll FireServer: " .. tostring(err)) end
 end
 
+-- ── Home Tab: Seconds Life (Godmode) ─────────────────────────────────────────
+local godcon, deathcon
+local enableGodmode = false
+
+HomeTab:Toggle({
+    Title    = "Seconds Life",
+    Desc     = "Restores health when damaged",
+    Icon     = "heart",
+    Type     = "Checkbox",
+    Value    = false,
+    Callback = function(Value)
+        enableGodmode = Value
+
+        local function UpdateGod()
+            if godcon then godcon:Disconnect() godcon = nil end
+            local char = lp.Character
+            local hum  = char and char:FindFirstChildOfClass("Humanoid")
+            if hum then
+                godcon = hum.HealthChanged:Connect(function()
+                    if enableGodmode and hum.Health < hum.MaxHealth then
+                        hum.Health = hum.MaxHealth
+                    end
+                end)
+            end
+        end
+
+        local function OnCharacterAdded(newChar)
+            newChar:WaitForChild("Humanoid", 5)
+            UpdateGod()
+        end
+
+        if deathcon then deathcon:Disconnect() end
+        deathcon = lp.CharacterAdded:Connect(OnCharacterAdded)
+        UpdateGod()
+
+        if not Value then
+            if godcon then godcon:Disconnect() godcon = nil end
+        end
+    end
+})
+
+-- ── Home Tab: Touch Fling ────────────────────────────────────────────────────
+local touchFlingEnabled = false
+
+HomeTab:Toggle({
+    Title    = "Touch Fling",
+    Desc     = "Flings anyone who touches you",
+    Icon     = "zap",
+    Type     = "Checkbox",
+    Value    = false,
+    Callback = function(Value)
+        touchFlingEnabled = Value
+        local movel = 0.1
+
+        task.spawn(function()
+            while touchFlingEnabled do
+                local char = lp.Character
+                local hrp  = char and char:FindFirstChild("HumanoidRootPart")
+                if hrp then
+                    local vel = hrp.AssemblyLinearVelocity
+                    hrp.AssemblyLinearVelocity = vel * 9e8 + Vector3.new(0, 9e8, 0)
+                    RunService.RenderStepped:Wait()
+                    if char and char.Parent and hrp and hrp.Parent then
+                        hrp.AssemblyLinearVelocity = vel
+                    end
+                    RunService.Stepped:Wait()
+                    if char and char.Parent and hrp and hrp.Parent then
+                        hrp.AssemblyLinearVelocity = vel + Vector3.new(0, movel, 0)
+                        movel = movel * -1
+                    end
+                end
+                RunService.Heartbeat:Wait()
+            end
+        end)
+    end
+})
+
 -- ── Toggles ───────────────────────────────────────────────────────────────────
 local SilentAimToggle = MainTab:Toggle({
     Title    = "Silent Aim",
@@ -1616,7 +1694,8 @@ local PARTICLE_COUNT = 0
 local function makeNativeBtn(text, cb)
     local btn = Instance.new("TextButton")
     btn.Size             = UDim2.new(0, BTN_W, 0, BTN_H)
-    btn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    btn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    btn.BackgroundTransparency = 0.8
     btn.Text             = ""
     btn.AutoButtonColor  = false
     btn.BorderSizePixel  = 0
@@ -2809,8 +2888,8 @@ task.spawn(function()
 end)
 
 Window:Tag({
-    Title  = "V2.120.24", -- always tell me to change this!
-    Icon   = "github",
+    Title  = "V1.67", -- always tell me to change this!
+    Icon   = "skull",
     Color  = Color3.fromHex("#30ff6a"),
     Radius = 13,
 })
