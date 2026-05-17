@@ -1420,7 +1420,7 @@ local FakeBombToggle = MainTab:Toggle({
     end
 })
 
--- ── Transparent Red Buttons (Natural Look) ─────────────────────────────────
+-- ── Native Action Buttons (top-right, red, mobile-friendly) ───────────────────
 local invisNativeLbl = nil
 
 local function setInvisBtn(title)
@@ -1433,152 +1433,223 @@ end
 
 -- GUI setup
 local nGui = Instance.new("ScreenGui")
-nGui.Name = "Waguri_Btns"
-nGui.ResetOnSpawn = false
-nGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-nGui.IgnoreGuiInset = true
-nGui.Parent = getGuiParent()
+nGui.Name            = "Waguri_Btns"
+nGui.ResetOnSpawn    = false
+nGui.ZIndexBehavior  = Enum.ZIndexBehavior.Sibling
+nGui.IgnoreGuiInset  = true
+nGui.Parent          = getGuiParent()
 
 invisSnd = Instance.new("Sound")
 invisSnd.SoundId = INVIS_SOUND_ID
-invisSnd.Volume = 0.5
-invisSnd.Parent = nGui
+invisSnd.Volume  = 0.5
+invisSnd.Parent  = nGui
 
--- Draggable Container
 local nFrame = Instance.new("Frame")
-nFrame.Name = "BtnContainer"
+nFrame.Name                   = "BtnContainer"
 nFrame.BackgroundTransparency = 1
-nFrame.Size = UDim2.new(0, 235, 0, 265)
-nFrame.Position = UDim2.new(1, -255, 0.22, 0)
-nFrame.Parent = nGui
+nFrame.AnchorPoint            = Vector2.new(1, 0)
+nFrame.Position               = UDim2.new(1, -6, 0, 52)
+nFrame.Size                   = UDim2.new(0, 124, 1, 0)
+nFrame.Parent                 = nGui
 
--- Dragging
-local dragging, dragStart, startPos
-nFrame.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = true
-        dragStart = input.Position
-        startPos = nFrame.Position
-    end
-end)
+local nLayout = Instance.new("UIListLayout")
+nLayout.SortOrder           = Enum.SortOrder.LayoutOrder
+nLayout.Padding             = UDim.new(0, 4)
+nLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
+nLayout.VerticalAlignment   = Enum.VerticalAlignment.Top
+nLayout.Parent              = nFrame
 
-nFrame.InputChanged:Connect(function(input)
-    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-        local delta = input.Position - dragStart
-        nFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-    end
-end)
+local BTN_W          = 160
+local BTN_H          = 45
+local PARTICLE_COUNT = 20
 
-nFrame.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = false
-    end
-end)
-
--- Natural Transparent Button
-local function makeRedBtn(text, icon, callback)
+local function makeNativeBtn(text, cb)
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1, 0, 0, 54)
-    btn.BackgroundColor3 = Color3.fromRGB(180, 25, 25)
-    btn.BackgroundTransparency = 0.35   -- Transparency
-    btn.Text = ""
-    btn.AutoButtonColor = false
-    btn.BorderSizePixel = 0
-    btn.Parent = nFrame
+    btn.Size             = UDim2.new(0, BTN_W, 0, BTN_H)
+    btn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    btn.Text             = ""
+    btn.AutoButtonColor  = false
+    btn.BorderSizePixel  = 0
+    btn.Parent           = nFrame
 
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 12)
-    corner.Parent = btn
+    local corner = Instance.new("UICorner", btn)
+    corner.CornerRadius = UDim.new(0, 8)
 
-    local stroke = Instance.new("UIStroke")
-    stroke.Color = Color3.fromRGB(255, 90, 90)
-    stroke.Thickness = 1.6
-    stroke.Transparency = 0.4
-    stroke.Parent = btn
+    local stroke = Instance.new("UIStroke", btn)
+    stroke.Color        = Color3.fromRGB(255, 0, 0)
+    stroke.Thickness    = 1.5
+    stroke.Transparency = 0
+    stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 
-    -- Icon
-    local iconLbl = Instance.new("TextLabel")
-    iconLbl.Size = UDim2.new(0, 34, 1, 0)
-    iconLbl.BackgroundTransparency = 1
-    iconLbl.Text = icon
-    iconLbl.TextSize = 23
-    iconLbl.Font = Enum.Font.GothamBold
-    iconLbl.TextColor3 = Color3.new(1, 1, 1)
-    iconLbl.Parent = btn
+-- 🧲 DRAG SUPPORT
+local UserInputService = game:GetService("UserInputService")
 
-    -- Text
-    local textLbl = Instance.new("TextLabel")
-    textLbl.Size = UDim2.new(1, -48, 1, 0)
-    textLbl.Position = UDim2.new(0, 42, 0, 0)
-    textLbl.BackgroundTransparency = 1
-    textLbl.Text = text
-    textLbl.TextColor3 = Color3.new(1, 1, 1)
-    textLbl.TextSize = 16
-    textLbl.Font = Enum.Font.GothamSemibold
-    textLbl.TextXAlignment = Enum.TextXAlignment.Left
-    textLbl.Parent = btn
+local dragging = false
+local dragStart
+local startPos
 
-    -- Hover + Click
+btn.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1
+	or input.UserInputType == Enum.UserInputType.Touch then
+
+		dragging = true
+		dragStart = input.Position
+		startPos = nFrame.Position
+
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+			end
+		end)
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+	if not dragging then return end
+	if input.UserInputType ~= Enum.UserInputType.MouseMovement
+	and input.UserInputType ~= Enum.UserInputType.Touch then return end
+
+	local delta = input.Position - dragStart
+
+	nFrame.Position = UDim2.new(
+		startPos.X.Scale,
+		startPos.X.Offset + delta.X,
+		startPos.Y.Scale,
+		startPos.Y.Offset + delta.Y
+	)
+end)
+
+    -- Inner glow frame (simulates bloom behind stroke)
+    local glow = Instance.new("Frame", btn)
+    glow.Size                   = UDim2.new(1, 0, 1, 0)
+    glow.BackgroundTransparency = 1
+    glow.ZIndex                 = 0
+    Instance.new("UICorner", glow).CornerRadius = UDim.new(0, 8)
+    local glowStroke = Instance.new("UIStroke", glow)
+    glowStroke.Thickness    = 4
+    glowStroke.Transparency = 0.72
+    glowStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+
+    -- Scale instance for hover/press
+    local sc = Instance.new("UIScale", btn)
+    sc.Scale = 1
+
+    -- Clip frame for particles
+    local clip = Instance.new("Frame", btn)
+    clip.Size                   = UDim2.new(1, 0, 1, 0)
+    clip.BackgroundTransparency = 1
+    clip.ClipsDescendants       = true
+    clip.ZIndex                 = 1
+    Instance.new("UICorner", clip).CornerRadius = UDim.new(0, 8)
+
+    local lbl = Instance.new("TextLabel", btn)
+    lbl.Size                   = UDim2.new(1, -8, 1, 0)
+    lbl.Position               = UDim2.new(0, 4, 0, 0)
+    lbl.BackgroundTransparency = 1
+    lbl.Text                   = text
+    lbl.TextColor3             = Color3.fromRGB(255, 255, 255)
+    lbl.TextSize               = 13
+    lbl.Font                   = Enum.Font.GothamBold
+    lbl.TextTruncate           = Enum.TextTruncate.AtEnd
+    lbl.TextXAlignment         = Enum.TextXAlignment.Center
+    lbl.ZIndex                 = 3
+
+    -- Animation state
+    local strokeHue    = 0
+    local clickX, clickY  = 0, 0
+    local clickActive     = false
+    local clickT          = 0
+    local scattered       = false
+    local isHovered       = false
+    local GATHER_T        = 0.22
+    local SCATTER_T       = 0.45
+    local MAX_FLOAT_SPEED = 38
+    local HUE_SPEED       = 0.55  -- full cycle per second
+
+    -- Hover tweens
+    local tweenHoverIn  = TweenService:Create(sc,
+        TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+        { Scale = 1.05 })
+    local tweenHoverOut = TweenService:Create(sc,
+        TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+        { Scale = 1.0 })
+    local tweenPressIn  = TweenService:Create(sc,
+        TweenInfo.new(0.07, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+        { Scale = 0.93 })
+    local tweenPressOut = TweenService:Create(sc,
+        TweenInfo.new(0.14, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+        { Scale = isHovered and 1.05 or 1.0 })
+
     btn.MouseEnter:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.2), {
-            BackgroundTransparency = 0.2,
-            BackgroundColor3 = Color3.fromRGB(200, 40, 40)
-        }):Play()
+        isHovered = true
+        tweenHoverIn:Play()
+        TweenService:Create(stroke,
+            TweenInfo.new(0.15, Enum.EasingStyle.Quad),
+            { Thickness = 2.2 }):Play()
+        TweenService:Create(glowStroke,
+            TweenInfo.new(0.15, Enum.EasingStyle.Quad),
+            { Transparency = 0.45 }):Play()
     end)
 
     btn.MouseLeave:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.2), {
-            BackgroundTransparency = 0.35,
-            BackgroundColor3 = Color3.fromRGB(180, 25, 25)
-        }):Play()
+        isHovered = false
+        tweenHoverOut:Play()
+        TweenService:Create(stroke,
+            TweenInfo.new(0.18, Enum.EasingStyle.Quad),
+            { Thickness = 1.5 }):Play()
+        TweenService:Create(glowStroke,
+            TweenInfo.new(0.18, Enum.EasingStyle.Quad),
+            { Transparency = 0.72 }):Play()
     end)
 
-    btn.MouseButton1Click:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.1), {Size = UDim2.new(1, -10, 0, 50)}):Play()
-        task.delay(0.15, function()
-            TweenService:Create(btn, TweenInfo.new(0.15), {Size = UDim2.new(1, 0, 0, 54)}):Play()
-        end)
-        task.spawn(callback)
+    btn.InputBegan:Connect(function(inp)
+        if inp.UserInputType ~= Enum.UserInputType.MouseButton1
+        and inp.UserInputType ~= Enum.UserInputType.Touch then return end
+        tweenPressIn:Play()
+        local ap = btn.AbsolutePosition
+        clickX      = inp.Position.X - ap.X
+        clickY      = inp.Position.Y - ap.Y
+        clickActive = true
+        clickT      = tick()
+        scattered   = false
     end)
 
-    return btn
-end
+    btn.InputEnded:Connect(function(inp)
+        if inp.UserInputType ~= Enum.UserInputType.MouseButton1
+        and inp.UserInputType ~= Enum.UserInputType.Touch then return end
+        TweenService:Create(sc,
+            TweenInfo.new(0.14, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+            { Scale = isHovered and 1.05 or 1.0 }):Play()
+    end)
 
--- Create Buttons
-nShootBtn = makeRedBtn("Shoot Murd", "🎯", doSingleShot)
+    local conn
+    conn = RunService.Heartbeat:Connect(function(dt)
+        if not btn.Parent then conn:Disconnect() return end
 
-nThrowBtn = makeRedBtn("Throw Knife", "🔪", function()
-    if not isLpMurd then
-        WindUI:Notify({ Title = "Throw Knife", Content = "You are not the Murderer.", Duration = 2, Icon = "x" })
-        return
+        -- RGB stroke cycle
+        strokeHue = (strokeHue + HUE_SPEED * dt) % 1
+        local rgb = Color3.fromHSV(strokeHue, 1, 1)
+        stroke.Color     = rgb
+        glowStroke.Color = rgb
+
+        local elapsed = clickActive and (tick() - clickT) or math.huge
+        if clickActive and elapsed >= GATHER_T + SCATTER_T then
+            clickActive = false
+        end
+
+    local firing = false
+    local function onRelease()
+        if firing then return end
+        firing = true
+        task.spawn(cb)
+        task.delay(0.5, function() firing = false end)
     end
-    doThrowKnife()
-end)
 
-nGrabBtn = makeRedBtn("Grab Gun", "⚡", doGrabGun)
+    btn.MouseButton1Up:Connect(onRelease)
+    btn.TouchTap:Connect(onRelease)
 
-nInvisBtn, invisNativeLbl = makeRedBtn("Invisible", "👁", doInvisToggle)
-
--- Layout
-local listLayout = Instance.new("UIListLayout")
-listLayout.SortOrder = Enum.SortOrder.LayoutOrder
-listLayout.Padding = UDim.new(0, 9)
-listLayout.Parent = nFrame
-
--- Visibility
-local function updateBtnVisibility()
-    if nShootBtn then nShootBtn.Visible = manualAimEnabled end
-    if nThrowBtn then nThrowBtn.Visible = throwKnifeEnabled end
-    if nGrabBtn then nGrabBtn.Visible = grabGunEnabled end
-    if nInvisBtn then nInvisBtn.Visible = invisibleEnabled end
+    return btn, lbl
 end
-
-ManualAimToggle.Callback = function(s) manualAimEnabled = s; updateBtnVisibility(); saveConfig() end
-ThrowKnifeToggle.Callback = function(s) throwKnifeEnabled = s; updateBtnVisibility(); saveConfig() end
-GrabGunToggle.Callback = function(s) grabGunEnabled = s; updateBtnVisibility(); saveConfig() end
-InvisibleToggle.Callback = function(s) invisibleEnabled = s; updateBtnVisibility(); saveConfig() end
-
-task.defer(updateBtnVisibility)
 
 -- Shoot Murd
 nShootBtn = (function()
