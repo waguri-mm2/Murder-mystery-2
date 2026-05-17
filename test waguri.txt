@@ -1330,7 +1330,7 @@ end
 HomeTab:Paragraph({
     Title         = "Waguri is so tuff 67",
     Desc          = "Hi this is waguri and i made this script so pls follow my tiktok or else im gonna tickle ur feet, ik it's corny but i just love yapping lol here's my TikTok btw @waguriii.wow",
-    Color         = "Yellow",
+    Color         = "Red",
     Thumbnail     = "https://www.roblox.com/asset-thumbnail/image?assetId=96912666417288&width=420&height=420&format=png",
     ThumbnailSize = 100,
 })
@@ -2382,7 +2382,7 @@ local GunEspToggle = VisualsTab:Toggle({
 AutoFarmTab:Paragraph({
     Title         = "Auto Farm",
     Desc          = "Press the button below to load autofarm.",
-    Color         = "Red",
+    Color         = "Green",
     Thumbnail     = "https://www.roblox.com/asset-thumbnail/image?assetId=80648874729441&width=420&height=420&format=png",
     ThumbnailSize = 140,
 
