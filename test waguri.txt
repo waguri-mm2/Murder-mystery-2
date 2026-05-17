@@ -150,8 +150,7 @@ local function loadConfig()
         espSheriff  = SheriffEspToggle.Value  ~= false
         espInnocent = InnocentEspToggle.Value ~= false
         espGun      = GunEspToggle.Value      ~= false
-        espinno    = InnoEspToggle.Value      ~= false
-         espAllPlayers = falselocal allESPHighlights = {}
+        _G.ESP_Enabled = false    = InnoEspToggle.Value      ~= false
          
         if nShootBtn then nShootBtn.Visible = manualAimEnabled   end
         if nThrowBtn then nThrowBtn.Visible = throwKnifeEnabled  end
@@ -400,38 +399,6 @@ for _, p in ipairs(Players:GetPlayers()) do
 	end  
 end
 
-local function applyAllESP()
-	if not espAllPlayers then return end
-
-	for _, p in ipairs(Players:GetPlayers()) do
-		if p ~= lp and p.Character then
-
-			local role = roles[p]
-
-			-- FILTER SYSTEM (your toggles control this)
-			if (role == "murder" and not espMurder) then continue end
-			if (role == "sheriff" and not espSheriff) then continue end
-			if (role == "hero" and not espSheriff) then continue end
-			if (role == "innocent" and not espInnocent) then continue end
-
-			-- avoid duplicates
-			if allESPHighlights[p] then continue end
-
-			local hl = Instance.new("Highlight")
-			hl.Name = "GlobalESP"
-			hl.Adornee = p.Character
-			hl.FillColor = Color3.fromRGB(0, 255, 255)
-			hl.OutlineColor = Color3.fromRGB(0, 255, 255)
-			hl.FillTransparency = 0.5
-			hl.OutlineTransparency = 0
-			hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-			hl.Parent = p.Character
-
-			allESPHighlights[p] = hl
-		end
-	end
-end
-
 local function attachLpVisual(p, char, color)
     if not espInnocent then return end
     removeLpVisual(p)
@@ -488,6 +455,50 @@ local function attachVisuals(p, char, role)
         end)
     end)
     if not ok then warn("[Waguri] RoleVisual: " .. tostring(err)) end
+end
+
+-- Global control variable
+_G.ESP_Enabled = false
+local ShowKnifeOnly = false
+
+local function updatePlayer(player)
+    if player == LocalPlayer then return end
+    local character = player.Character
+    if not character or not character:FindFirstChild("HumanoidRootPart") then return end
+
+    -- IF THE UI TOGGLE IS OFF: Destroy the highlight and stop
+    if not _G.ESP_Enabled then
+        local hl = character:FindFirstChild(HL_TAG)
+        if hl then hl:Destroy() end
+        return
+    end
+
+    local color = detectWeaponColor(character, player)
+
+    -- Filter out non-murderers if "Show Murderer Only" is checked
+    if ShowKnifeOnly and color ~= KNIFE_COLOR then
+        local hl = character:FindFirstChild(HL_TAG)
+        if hl then hl:Destroy() end
+        return
+    end
+
+    -- Otherwise, create or update the highlight
+    local hl = getOrMakeHighlight(character)
+    hl.Enabled = true
+    hl.OutlineColor = color
+    hl.FillColor = color
+    applyGlowPulse(hl, color)
+end
+
+local function clearAllHighlights()
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player.Character then
+            local hl = player.Character:FindFirstChild(HL_TAG)
+            if hl then 
+                hl:Destroy() 
+            end
+        end
+    end
 end
 
 local function removeOutline(p)
@@ -2115,28 +2126,6 @@ local InfiniteJumpToggle = PlayersTab:Toggle({
 })
 
 -- ── Visuals Tab ───────────────────────────────────────────────────────────────
-local AllPlayersEspToggle = VisualsTab:Toggle({
-    Title = "ESP All Players",
-    Desc = "Base ESP for everyone (filters apply below)",
-    Icon = "eye",
-    Type = "Checkbox",
-    Value = false,
-
-    Callback = function(state)
-        espAllPlayers = state
-        saveConfig()
-
-        if not state then
-            for _, hl in pairs(allESPHighlights) do
-                if hl and hl.Parent then
-                    hl:Destroy()
-                end
-            end
-            allESPHighlights = {}
-        end
-    end
-})
-
 local MurderEspToggle = VisualsTab:Toggle({
     Title    = "Murder ESP",
     Desc     = "Show ESP for the Murderer",
@@ -2188,6 +2177,18 @@ local SheriffEspToggle = VisualsTab:Toggle({
             end
         end
         saveConfig()
+    end
+})
+
+local InnoEspToggle.Value = VisualsTab:Toggle({
+    Title = "ESP everyone (Highlights)",
+    Default = false,
+    Callback = function(Value)
+        _G.ESP_Enabled = Value
+        if not Value then
+            -- If turned off, clean up all existing highlights immediately
+            clearAllHighlights()
+        end
     end
 })
 
