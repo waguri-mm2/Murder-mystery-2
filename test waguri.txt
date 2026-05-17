@@ -150,8 +150,7 @@ local function loadConfig()
         espSheriff  = SheriffEspToggle.Value  ~= false
         espInnocent = InnocentEspToggle.Value ~= false
         espGun      = GunEspToggle.Value      ~= false
-        _G.ESP_Enabled = false    = InnoEspToggle.Value      ~= false
-         
+
         if nShootBtn then nShootBtn.Visible = manualAimEnabled   end
         if nThrowBtn then nThrowBtn.Visible = throwKnifeEnabled  end
         if nGrabBtn  then nGrabBtn.Visible  = grabGunEnabled     end
@@ -349,56 +348,6 @@ local function clearAllLpVisuals()
     for p in pairs(lpVisuals) do removeLpVisual(p) end
 end
 
-local InnocentESPEnabled = false
-local innocentHighlights = {}
-
-local function clearInnocentESP()
-	for _, hl in pairs(innocentHighlights) do
-		if hl and hl.Parent then
-			hl:Destroy()
-		end
-	end
-	innocentHighlights = {}
-end
-
-local InnocentESPEnabled = true
-local innocentHighlights = {}
-
-local function clearInnocentESP()
-for p, hl in pairs(innocentHighlights) do
-if hl and hl.Parent then hl:Destroy() end
-end
-innocentHighlights = {}
-end
-
-local function applyInnocentESP()
-clearInnocentESP()
-
-for _, p in ipairs(Players:GetPlayers()) do  
-	if p ~= lp then  
-		local char = p.Character  
-		if char then  
-			local role = roles[p]  
-
-			-- ONLY innocents  
-			if role ~= "murder" and role ~= "sheriff" and role ~= "hero" then  
-				  
-				local hl = Instance.new("Highlight")  
-				hl.Name = "InnocentESP"  
-				hl.Adornee = char  
-				hl.FillColor = Color3.fromRGB(0, 255, 0)  
-				hl.OutlineColor = Color3.fromRGB(0, 255, 0)  
-				hl.FillTransparency = 0.5  
-				hl.OutlineTransparency = 0  
-				hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop  
-				hl.Parent = char  
-
-				innocentHighlights[p] = hl  
-			end  
-		end  
-	end  
-end
-
 local function attachLpVisual(p, char, color)
     if not espInnocent then return end
     removeLpVisual(p)
@@ -455,50 +404,6 @@ local function attachVisuals(p, char, role)
         end)
     end)
     if not ok then warn("[Waguri] RoleVisual: " .. tostring(err)) end
-end
-
--- Global control variable
-_G.ESP_Enabled = false
-local ShowKnifeOnly = false
-
-local function updatePlayer(player)
-    if player == LocalPlayer then return end
-    local character = player.Character
-    if not character or not character:FindFirstChild("HumanoidRootPart") then return end
-
-    -- IF THE UI TOGGLE IS OFF: Destroy the highlight and stop
-    if not _G.ESP_Enabled then
-        local hl = character:FindFirstChild(HL_TAG)
-        if hl then hl:Destroy() end
-        return
-    end
-
-    local color = detectWeaponColor(character, player)
-
-    -- Filter out non-murderers if "Show Murderer Only" is checked
-    if ShowKnifeOnly and color ~= KNIFE_COLOR then
-        local hl = character:FindFirstChild(HL_TAG)
-        if hl then hl:Destroy() end
-        return
-    end
-
-    -- Otherwise, create or update the highlight
-    local hl = getOrMakeHighlight(character)
-    hl.Enabled = true
-    hl.OutlineColor = color
-    hl.FillColor = color
-    applyGlowPulse(hl, color)
-end
-
-local function clearAllHighlights()
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player.Character then
-            local hl = player.Character:FindFirstChild(HL_TAG)
-            if hl then 
-                hl:Destroy() 
-            end
-        end
-    end
 end
 
 local function removeOutline(p)
@@ -2180,38 +2085,8 @@ local SheriffEspToggle = VisualsTab:Toggle({
     end
 })
 
-local InnoEspToggle.Value = VisualsTab:Toggle({
-    Title = "ESP everyone (Highlights)",
-    Default = false,
-    Callback = function(Value)
-        _G.ESP_Enabled = Value
-        if not Value then
-            -- If turned off, clean up all existing highlights immediately
-            clearAllHighlights()
-        end
-    end
-})
-
 local InnocentEspToggle = VisualsTab:Toggle({
-    Title = "Innocent ESP",
-    Desc = "Only shows green highlight on innocents",
-    Icon = "eye",
-    Type = "Checkbox",
-    Value = true,
-
-    Callback = function(state)
-        InnocentESPEnabled = state
-
-        if state then
-            applyInnocentESP()
-        else
-            clearInnocentESP()
-        end
-    end
-})
-
-local InnocentEspToggle = VisualsTab:Toggle({
-    Title    = "Trap Esp",
+    Title    = "Innocent ESP",
     Desc     = "Show green ESP on innocents (Murderer view)",
     Icon     = "eye",
     Type     = "Checkbox",
@@ -2228,6 +2103,106 @@ local InnocentEspToggle = VisualsTab:Toggle({
             end
         end
         saveConfig()
+    end
+})
+
+local WeaponEspEnabled = false
+local HL_TAG = "_WH"
+
+VisualsTab:Toggle({
+    Title = "Weapon ESP",
+    Desc = "Show weapon role highlights",
+    Icon = "swords",
+    Type = "Checkbox",
+    Value = false,
+
+    Callback = function(state)
+        WeaponEspEnabled = state
+
+        if not state then
+            -- remove esp
+            for _, plr in ipairs(Players:GetPlayers()) do
+                if plr.Character then
+                    local hl = plr.Character:FindFirstChild(HL_TAG)
+
+                    if hl then
+                        hl:Destroy()
+                    end
+                end
+            end
+
+            return
+        end
+
+        local function getRole(plr)
+            local char = plr.Character
+            if not char then return "Innocent" end
+
+            local bp = plr:FindFirstChildOfClass("Backpack")
+
+            if bp then
+                if bp:FindFirstChild("Knife") then
+                    return "Murderer"
+                end
+
+                if bp:FindFirstChild("Gun")
+                or bp:FindFirstChild("Revolver") then
+                    return "Sheriff"
+                end
+            end
+
+            if char:FindFirstChild("Knife") then
+                return "Murderer"
+            end
+
+            if char:FindFirstChild("Gun")
+            or char:FindFirstChild("Revolver") then
+                return "Sheriff"
+            end
+
+            return "Innocent"
+        end
+
+        local function applyESP(plr)
+            if not WeaponEspEnabled then return end
+            if plr == Players.LocalPlayer then return end
+
+            local char = plr.Character
+            if not char then return end
+
+            local role = getRole(plr)
+
+            local color = Color3.fromRGB(50,205,50)
+
+            if role == "Murderer" then
+                color = Color3.fromRGB(255,50,50)
+            elseif role == "Sheriff" then
+                color = Color3.fromRGB(50,120,255)
+            end
+
+            local hl = char:FindFirstChild(HL_TAG)
+
+            if not hl then
+                hl = Instance.new("Highlight")
+                hl.Name = HL_TAG
+                hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+                hl.FillTransparency = 0.5
+                hl.OutlineTransparency = 0
+                hl.Parent = char
+            end
+
+            hl.FillColor = color
+            hl.OutlineColor = color
+        end
+
+        for _, plr in ipairs(Players:GetPlayers()) do
+            applyESP(plr)
+
+            plr.CharacterAdded:Connect(function()
+                task.wait(1)
+                applyESP(plr)
+            end)
+        end
     end
 })
 
