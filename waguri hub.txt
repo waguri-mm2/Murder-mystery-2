@@ -99,10 +99,10 @@ WindUI:AddTheme({ Name = "Custom",          Accent = Color3.fromHex("#FF0F7B"), 
 WindUI:SetTheme("Ocean Blue")
 
 local Window = WindUI:CreateWindow({
-    Title       = "MM2 ShadowX | Official",
+    Title       = "WAGURI MM2",
     Icon        = "sword",
-    Author      = "by Jv3xz0",
-    Folder      = "ShadowX",
+    Author      = "by waguri ofc",
+    Folder      = "waguri",
     Transparent = true,
     Theme       = "Dark",
 })
