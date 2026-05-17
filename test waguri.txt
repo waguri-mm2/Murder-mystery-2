@@ -195,7 +195,7 @@ Window:EditOpenButton({
     Draggable       = true,
 })
 
-local HomeTab = Window:Tab({ Title = "Home", Icon = "home" })
+local HomeTab     = Window:Tab({ Title = "Home",     Icon = "home"    })
 local MainTab     = Window:Tab({ Title = "Main",     Icon = "sword"    })
 local PlayersTab  = Window:Tab({ Title = "Players",  Icon = "users"    })
 local VisualsTab  = Window:Tab({ Title = "Visuals",  Icon = "eye"      })
