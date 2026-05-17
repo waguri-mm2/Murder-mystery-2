@@ -1327,14 +1327,6 @@ local function doKillAll()
 end
 
 -- ── Home Tab: Seconds Life (Godmode) ─────────────────────────────────────────
-MainTab:Paragraph({
-    Title         = "Waguri is so tuff 67",
-    Desc          = "idk what to add maybe you guys can request so i can add, it's my first time lol don't mind me I really love yappin:> also follow me on tiktok @waguriii.wow",
-    Color         = "Purple",
-    Thumbnail     = "rbxassetid://96912666417288",
-    ThumbnailSize = 100,
-})
-
 local godcon, deathcon
 local enableGodmode = false
 
