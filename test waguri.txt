@@ -1493,37 +1493,63 @@ UserInputService.InputChanged:Connect(function(input)
 	end
 end)
 
--- 🔒 DRAG LOCK BUTTON
+--- 🔒 MODERN LOCK BUTTON
 
 local dragEnabled = true
 
 local lockBtn = Instance.new("TextButton")
-lockBtn.Size = UDim2.new(0, 40, 0, 40)
-lockBtn.Position = UDim2.new(0, -50, 0, 0)
-lockBtn.BackgroundColor3 = Color3.fromRGB(20,20,20)
-lockBtn.Text = "🔓"
-lockBtn.TextSize = 18
+lockBtn.Name = "DragLock"
+lockBtn.Size = UDim2.new(0, 36, 0, 36)
+lockBtn.Position = UDim2.new(1, -42, 0, -42)
+lockBtn.BackgroundColor3 = Color3.fromRGB(25,25,25)
+lockBtn.Text = "⛶"
+lockBtn.TextSize = 16
 lockBtn.Font = Enum.Font.GothamBold
 lockBtn.TextColor3 = Color3.fromRGB(255,255,255)
 lockBtn.BorderSizePixel = 0
+lockBtn.ZIndex = 10
 lockBtn.Parent = nFrame
 
-Instance.new("UICorner", lockBtn).CornerRadius = UDim.new(0,10)
+-- PERFECT CIRCLE
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(1,0)
+corner.Parent = lockBtn
 
+-- CLEAN STROKE
 local stroke = Instance.new("UIStroke")
-stroke.Color = Color3.fromRGB(255,0,0)
-stroke.Thickness = 1.5
+stroke.Color = Color3.fromRGB(255,255,255)
+stroke.Thickness = 1.2
+stroke.Transparency = 0.35
 stroke.Parent = lockBtn
 
--- TOGGLE LOCK
+-- HOVER EFFECT
+lockBtn.MouseEnter:Connect(function()
+	game:GetService("TweenService"):Create(
+		lockBtn,
+		TweenInfo.new(0.15),
+		{BackgroundColor3 = Color3.fromRGB(35,35,35)}
+	):Play()
+end)
+
+lockBtn.MouseLeave:Connect(function()
+	game:GetService("TweenService"):Create(
+		lockBtn,
+		TweenInfo.new(0.15),
+		{BackgroundColor3 = Color3.fromRGB(25,25,25)}
+	):Play()
+end)
+
+-- TOGGLE DRAG
 lockBtn.MouseButton1Click:Connect(function()
+
 	dragEnabled = not dragEnabled
 
 	if dragEnabled then
-		lockBtn.Text = "🔓"
+		lockBtn.Text = "⛶"
 	else
 		lockBtn.Text = "🔒"
 	end
+
 end)
 
 local nLayout = Instance.new("UIListLayout")
