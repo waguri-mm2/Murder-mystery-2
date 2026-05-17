@@ -1591,6 +1591,118 @@ end
 
 task.defer(updateBtnVisibility)
 
+-- Shoot Murd
+nShootBtn = (function()
+    local btn = makeNativeBtn("Shoot Murd", function()
+        local ok, err = pcall(doSingleShot)
+        if not ok then warn("[Waguri] ShootMurd: " .. tostring(err)) end
+    end)
+    btn.Visible = false
+    return btn
+end)()
+
+-- Throw Knife
+nThrowBtn = (function()
+    local btn = makeNativeBtn("Throw Knife", function()
+        if not isLpMurd then
+            WindUI:Notify({ Title = "Throw Knife", Content = "You are not the Murderer.", Duration = 2, Icon = "x" })
+            return
+        end
+        local ok, err = pcall(doThrowKnife)
+        if not ok then warn("[Waguri] ThrowKnife: " .. tostring(err)) end
+    end)
+    btn.Visible = false
+    return btn
+end)()
+
+-- Grab Gun
+nGrabBtn = (function()
+    local btn = makeNativeBtn("Grab Gun", function()
+        local ok, err = pcall(doGrabGun)
+        if not ok then warn("[Waguri] GrabGun: " .. tostring(err)) end
+    end)
+    btn.Visible = false
+    return btn
+end)()
+
+local function setCharTransparency(char, t)
+    for _, v in ipairs(char:GetDescendants()) do
+        if v:IsA("BasePart") or v:IsA("Decal") then
+            v.Transparency = t
+        end
+    end
+end
+
+local function doInvisToggle()
+    if invisActive then
+        WindUI:Notify({ Title = "Invisible", Content = "Invisible is currently in action, Please wait!.", Duration = 3, Icon = "x" })
+        return
+    end
+    invisActive = true
+    if not invisibleEnabled then
+        WindUI:Notify({ Title = "Invisible", Content = "Enable Invisible toggle first.", Duration = 3, Icon = "x" })
+        return
+    end
+    local char = lp.Character
+    if not char then
+        WindUI:Notify({ Title = "Invisible", Content = "No character found.", Duration = 3, Icon = "x" })
+        return
+    end
+    if invisSnd then invisSnd:Play() end
+
+    if not isInvisible then
+        local hrp = char:FindFirstChild("HumanoidRootPart")
+        if not hrp then return end
+        local savedCF = hrp.CFrame
+        local torso   = char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso")
+        if not torso then return end
+
+        local hidePos = Vector3.new(0, 10000, 0)
+
+        char:MoveTo(hidePos)
+        task.wait(0.15)
+
+        local seat = Instance.new("Seat")
+        seat.Name        = "Waguri_InvisChair"
+        seat.Anchored    = false
+        seat.CanCollide  = false
+        seat.Transparency = 1
+        seat.Position    = hidePos
+        seat.Parent      = workspace
+
+        local weld  = Instance.new("Weld")
+        weld.Part0  = seat
+        weld.Part1  = torso
+        weld.Parent = seat
+
+        task.wait()
+        seat.CFrame = savedCF
+        invisSeat   = seat
+
+        setCharTransparency(char, 0.6)
+
+        isInvisible = true
+        setInvisBtn("[ON] Invisible")
+    else
+        if invisSeat and invisSeat.Parent then invisSeat:Destroy() end
+        local stray = workspace:FindFirstChild("Waguri_InvisChair")
+        if stray then stray:Destroy() end
+        local hrp = workspace[lp.Name]:FindFirstChild("HumanoidRootPart")
+        invisSeat = nil
+
+        setCharTransparency(char, 0)
+        local hrp = char:FindFirstChild("HumanoidRootPart")
+        if hrp then hrp.Transparency = 0 end
+
+        isInvisible = false
+        resetInvisBtn()
+    end
+    invisActive = false
+end
+
+nInvisBtn, invisNativeLbl = makeNativeBtn("Invisible", doInvisToggle)
+nInvisBtn.Visible = false
+
 local function applyWalkSpeed(value)
     local n = tonumber(value)
     if not n then return end
@@ -1884,7 +1996,7 @@ local ServerInfo = MiscTab:Paragraph({
     Desc          = string.format("Game: %s\nPlace ID: %d\nJob ID: %s\nPlayers: %d/%d",
         gameName, game.PlaceId, game.JobId, #Players:GetPlayers(), Players.MaxPlayers),
     Color         = "Blue",
-    Thumbnail     = "rbxassetid://77351600115405",
+    Thumbnail     = "rbxassetid://74135635728836",
     ThumbnailSize = 100,
 })
 
@@ -1915,9 +2027,9 @@ MiscTab:Button({
 -- ── Credits Tab ───────────────────────────────────────────────────────────────
 CreditsTab:Paragraph({
     Title         = "Waguri | Official",
-    Desc          = "Waguri so cute",
+    Desc          = "Made by Jv3xz0. Join our Discord to stay updated with the latest features.",
     Color         = "Red",
-    Thumbnail     = "rbxassetid://77351600115405",
+    Thumbnail     = "rbxassetid://74135635728836",
     ThumbnailSize = 140,
     Buttons = {
         {
