@@ -2146,7 +2146,7 @@ local InnocentEspToggle = VisualsTab:Toggle({
     end
 })
 
-local env = {}
+env = env or {}
 env.ESP_ENABLED = false
 
 local updateLoop = nil
@@ -2224,7 +2224,7 @@ local function createBillboard(head, role, playerName)
 end
 
 ---------------------------------------------------
--- UPDATE ESP
+-- UPDATE LOOP
 ---------------------------------------------------
 
 local function updateESP()
@@ -2236,8 +2236,8 @@ local function updateESP()
         if player ~= LocalPlayer and player.Character then
 
             local head = player.Character:FindFirstChild("Head")
-
             if head then
+
                 local role = roles[player.Name] or "Default"
 
                 if not head:FindFirstChild("RoleESP") then
@@ -2268,31 +2268,25 @@ end
 ---------------------------------------------------
 
 local function startESP()
-
     if updateLoop then return end
 
     updateLoop = task.spawn(function()
-
         while env.ESP_ENABLED do
             pcall(updateESP)
             task.wait(0.25)
         end
-
         clearESP()
         updateLoop = nil
     end)
 end
 
 ---------------------------------------------------
--- WIND UI TOGGLE
+-- YOUR WIND UI TOGGLE (FIXED)
 ---------------------------------------------------
 
-local ESPToggle = VisualsTab:Toggle({
-    Title = "Role ESP",
-    Desc = "Shows roles + highlights players",
-    Icon = "eye",
-    Type = "Checkbox",
-    Value = false,
+MainTab:AddToggle({
+    Name = "Esp Player (Role&Name)",
+    Default = false,
 
     Callback = function(Value)
 
@@ -2302,6 +2296,11 @@ local ESPToggle = VisualsTab:Toggle({
             startESP()
         else
             clearESP()
+
+            if updateLoop then
+                task.cancel(updateLoop)
+                updateLoop = nil
+            end
         end
     end
 })
