@@ -1712,28 +1712,39 @@ nInvisBtn.Visible = false
     return btn, lbl
 end
 
--- ==================== CLEAN NATIVE BUTTONS ====================
-nShootBtn = makeNativeBtn("Shoot Murderer", function()
-    pcall(doSingleShot)
-end)
-nShootBtn.Visible = false
+-- Shoot Murd
+nShootBtn = (function()
+    local btn = makeNativeBtn("Shoot Murd", function()
+        local ok, err = pcall(doSingleShot)
+        if not ok then warn("[Waguri] ShootMurd: " .. tostring(err)) end
+    end)
+    btn.Visible = false
+    return btn
+end)()
 
-nThrowBtn = makeNativeBtn("Throw Knife", function()
-    if not isLpMurd then
-        WindUI:Notify({ Title = "Error", Content = "You are not the Murderer.", Duration = 2, Icon = "x" })
-        return
-    end
-    pcall(doThrowKnife)
-end)
-nThrowBtn.Visible = false
+-- Throw Knife
+nThrowBtn = (function()
+    local btn = makeNativeBtn("Throw Knife", function()
+        if not isLpMurd then
+            WindUI:Notify({ Title = "Throw Knife", Content = "You are not the Murderer.", Duration = 2, Icon = "x" })
+            return
+        end
+        local ok, err = pcall(doThrowKnife)
+        if not ok then warn("[Waguri] ThrowKnife: " .. tostring(err)) end
+    end)
+    btn.Visible = false
+    return btn
+end)()
 
-nGrabBtn = makeNativeBtn("Grab Gun", function()
-    pcall(doGrabGun)
-end)
-nGrabBtn.Visible = false
-
-nInvisBtn, invisNativeLbl = makeNativeBtn("Invisible", doInvisToggle)
-nInvisBtn.Visible = false
+-- Grab Gun
+nGrabBtn = (function()
+    local btn = makeNativeBtn("Grab Gun", function()
+        local ok, err = pcall(doGrabGun)
+        if not ok then warn("[Waguri] GrabGun: " .. tostring(err)) end
+    end)
+    btn.Visible = false
+    return btn
+end)()
 
 local function setCharTransparency(char, t)
     for _, v in ipairs(char:GetDescendants()) do
