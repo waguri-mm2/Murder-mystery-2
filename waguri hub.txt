@@ -1,5 +1,5 @@
-if _G.__ShadowX_Running then return end
-_G.__ShadowX_Running = true
+if _G.__Waguri_Running then return end
+_G.__Waguri_Running = true
 
 local Players    = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -96,7 +96,7 @@ WindUI:AddTheme({ Name = "Golden Hour",     Accent = Color3.fromHex("#F1C40F"), 
 WindUI:AddTheme({ Name = "Neon Green",      Accent = Color3.fromHex("#39FF14"), Dialog = Color3.fromHex("#001A00"), Outline = Color3.fromHex("#39FF14"), Text = Color3.fromHex("#FFFFFF"), Placeholder = Color3.fromHex("#7a7a7a"), Background = Color3.fromHex("#000D00"), Button = Color3.fromHex("#003300"), Icon = Color3.fromHex("#39FF14") })
 WindUI:AddTheme({ Name = "Electric Blue",   Accent = Color3.fromHex("#0080FF"), Dialog = Color3.fromHex("#000D1A"), Outline = Color3.fromHex("#0080FF"), Text = Color3.fromHex("#FFFFFF"), Placeholder = Color3.fromHex("#7a7a7a"), Background = Color3.fromHex("#00050D"), Button = Color3.fromHex("#001A40"), Icon = Color3.fromHex("#0080FF") })
 WindUI:AddTheme({ Name = "Custom",          Accent = Color3.fromHex("#FF0F7B"), Dialog = Color3.fromHex("#161616"), Outline = Color3.fromHex("#FF0F7B"), Text = Color3.fromHex("#FFFFFF"), Placeholder = Color3.fromHex("#7a7a7a"), Background = Color3.fromHex("#101010"), Button = Color3.fromHex("#52525b"), Icon = Color3.fromHex("#FF0F7B") })
-WindUI:SetTheme("Ocean Blue")
+WindUI:SetTheme("Forest Green")
 
 local Window = WindUI:CreateWindow({
     Title       = "WAGURI MM2",
@@ -104,7 +104,7 @@ local Window = WindUI:CreateWindow({
     Author      = "by waguri ofc",
     Folder      = "waguri",
     Transparent = true,
-    Theme       = "Ocean Blue",
+    Theme       = "Forest Green",
 })
 Window:ToggleTransparency(true)
 
@@ -116,7 +116,7 @@ local function saveConfig()
     if not ok then
         local ok2, err2 = pcall(function() ConfigManager:Save("MM2") end)
         if not ok2 then
-            warn("[ShadowX] Save failed: " .. tostring(err) .. " | fallback: " .. tostring(err2))
+            warn("[Waguri] Save failed: " .. tostring(err) .. " | fallback: " .. tostring(err2))
             WindUI:Notify({ Title = "Config", Content = "Failed to save config: " .. tostring(err), Duration = 4, Icon = "x" })
         end
     end
@@ -127,7 +127,7 @@ local function loadConfig()
     if not ok then
         local ok2, err2 = pcall(function() ConfigManager:Load("MM2") end)
         if not ok2 then
-            warn("[ShadowX] Load failed: " .. tostring(err) .. " | fallback: " .. tostring(err2))
+            warn("[Waguri] Load failed: " .. tostring(err) .. " | fallback: " .. tostring(err2))
             WindUI:Notify({ Title = "Config", Content = "Failed to load config: " .. tostring(err), Duration = 4, Icon = "x" })
             return
         end
@@ -307,7 +307,7 @@ local function attachGunDropHighlight(part)
             gunDropHighlights[part] = nil
         end)
     end)
-    if not ok then warn("[ShadowX] GunDrop highlight: " .. tostring(err)) end
+    if not ok then warn("[Waguri] GunDrop highlight: " .. tostring(err)) end
 end
 
 local function makeBillboard(adornee, color, name, labelText)
@@ -370,7 +370,7 @@ local function attachLpVisual(p, char, color)
             end
         end)
     end)
-    if not ok then warn("[ShadowX] LpVisual: " .. tostring(err)) end
+    if not ok then warn("[Waguri] LpVisual: " .. tostring(err)) end
 end
 
 local function removeVisuals(p)
@@ -402,7 +402,7 @@ local function attachVisuals(p, char, role)
             end
         end)
     end)
-    if not ok then warn("[ShadowX] RoleVisual: " .. tostring(err)) end
+    if not ok then warn("[Waguri] RoleVisual: " .. tostring(err)) end
 end
 
 local function removeOutline(p)
@@ -439,7 +439,7 @@ local function attachOutline(p, char, role)
             end
         end)
     end)
-    if not ok then warn("[ShadowX] Outline: " .. tostring(err)) end
+    if not ok then warn("[Waguri] Outline: " .. tostring(err)) end
 end
 
 local function getRole(p)
@@ -712,7 +712,7 @@ local function ensureFakeHRP(p)
         part.Parent       = Workspace
         fakeHRPs[p]       = part
     end)
-    if not ok then warn("[ShadowX] FakeHRP create: " .. tostring(err)) end
+    if not ok then warn("[Waguri] FakeHRP create: " .. tostring(err)) end
 end
 
 local function setupPlayer(p)
@@ -884,14 +884,14 @@ local function getAimPosition()
         end
         predY = pos.Y + yOff
         if lp.Name == OWNER then
-            print(string.format("[ShadowX] AimGun | hSpeed=%.1f lead=%.2f velY=%.1f yOff=%.1f predY=%.1f floorDist=%s",
+            print(string.format("[Waguri] AimGun | hSpeed=%.1f lead=%.2f velY=%.1f yOff=%.1f predY=%.1f floorDist=%s",
                 speed, lead, velY, yOff, predY,
                 floorHit and string.format("%.1f", floorHit.Distance) or "nil"))
         end
     else
         predY = pos.Y
         if lp.Name == OWNER then
-            print(string.format("[ShadowX] AimGun | hSpeed=%.1f lead=%.2f velY=0 yOff=0 (ground)", speed, lead))
+            print(string.format("[Waguri] AimGun | hSpeed=%.1f lead=%.2f velY=0 yOff=0 (ground)", speed, lead))
         end
     end
 
@@ -1003,7 +1003,7 @@ local function equipKnife(char, hum)
     local bpKnife = bp:FindFirstChild("Knife")
     if not bpKnife then return nil end
     local ok, err = pcall(function() hum:EquipTool(bpKnife) end)
-    if not ok then warn("[ShadowX] equipKnife: " .. tostring(err)) return nil end
+    if not ok then warn("[Waguri] equipKnife: " .. tostring(err)) return nil end
     task.wait(0.1)
     return char:FindFirstChild("Knife")
 end
@@ -1015,13 +1015,13 @@ doThrowKnife = function()
     local myHRP = char:FindFirstChild("HumanoidRootPart")
     if not myHRP then return end
     local hum = char:FindFirstChildOfClass("Humanoid")
-    if not hum then warn("[ShadowX] ThrowKnife: no Humanoid") return end
+    if not hum then warn("[Waguri] ThrowKnife: no Humanoid") return end
     local knife = equipKnife(char, hum)
-    if not knife then warn("[ShadowX] ThrowKnife: no Knife found") return end
+    if not knife then warn("[Waguri] ThrowKnife: no Knife found") return end
     local knifeEvents = knife:FindFirstChild("Events")
     local throwRemote = knifeEvents and knifeEvents:FindFirstChild("KnifeThrown")
     if not (throwRemote and throwRemote:IsA("RemoteEvent")) then
-        warn("[ShadowX] ThrowKnife: KnifeThrown remote not found") return
+        warn("[Waguri] ThrowKnife: KnifeThrown remote not found") return
     end
     local candidates = {}
     for _, p in ipairs(Players:GetPlayers()) do
@@ -1057,13 +1057,13 @@ doThrowKnife = function()
         nearest    = candidates[1].player
         nearestHRP = candidates[1].hrp
     end
-    if not nearest then warn("[ShadowX] ThrowKnife: no target found") return end
+    if not nearest then warn("[Waguri] ThrowKnife: no target found") return end
     local kDt    = (nearestHRP.Position - myHRP.Position).Magnitude / getKnifeSpeed()
     local aimPos = getPredPos(nearest, nearestHRP, myHRP, kDt)
     local ok, err = pcall(function()
         throwRemote:FireServer(CFrame.new(myHRP.Position, aimPos), CFrame.new(aimPos))
     end)
-    if not ok then warn("[ShadowX] ThrowKnife FireServer: " .. tostring(err)) end
+    if not ok then warn("[Waguri] ThrowKnife FireServer: " .. tostring(err)) end
 end
 
 local doGrabGun
@@ -1076,13 +1076,13 @@ doGrabGun = function()
     for _, desc in ipairs(Workspace:GetDescendants()) do
         if desc.Name == "GunDrop" and desc:IsA("BasePart") then gunDrop = desc break end
     end
-    if not gunDrop then warn("[ShadowX] GrabGun: no GunDrop found") return end
+    if not gunDrop then warn("[Waguri] GrabGun: no GunDrop found") return end
     local ok, err = pcall(function()
         hrp.CFrame = CFrame.new(gunDrop.Position)
         firetouchinterest(gunDrop, hrp, 0)
         hrp.CFrame = savedCFrame
     end)
-    if not ok then warn("[ShadowX] GrabGun: " .. tostring(err)) end
+    if not ok then warn("[Waguri] GrabGun: " .. tostring(err)) end
 end
 
 local function equipGunIfNeeded()
@@ -1111,7 +1111,7 @@ local function doSingleShot()
     local ok, err = pcall(function()
         remote:FireServer(CFrame.new(myHRP.Position, aimPos), CFrame.new(aimPos))
     end)
-    if not ok then warn("[ShadowX] doSingleShot: " .. tostring(err)) end
+    if not ok then warn("[Waguri] doSingleShot: " .. tostring(err)) end
 end
 
 local function SkidFling(target)
@@ -1301,7 +1301,7 @@ local function doKillAll()
     local hum = char:FindFirstChildOfClass("Humanoid")
     if not hum then return end
     local knife = equipKnife(char, hum)
-    if not knife then warn("[ShadowX] KillAll: no Knife found") return end
+    if not knife then warn("[Waguri] KillAll: no Knife found") return end
     local knifeEvents = knife:FindFirstChild("Events")
     local stab = knifeEvents and knifeEvents:FindFirstChild("KnifeStabbed")
     if not (stab and stab:IsA("RemoteEvent")) then
@@ -1321,7 +1321,7 @@ local function doKillAll()
         end
     end
     local ok, err = pcall(function() stab:FireServer() end)
-    if not ok then warn("[ShadowX] KillAll FireServer: " .. tostring(err)) end
+    if not ok then warn("[Waguri] KillAll FireServer: " .. tostring(err)) end
 end
 
 -- ── Toggles ───────────────────────────────────────────────────────────────────
@@ -1433,7 +1433,7 @@ end
 
 -- GUI setup
 local nGui = Instance.new("ScreenGui")
-nGui.Name            = "ShadowX_Btns"
+nGui.Name            = "Waguri_Btns"
 nGui.ResetOnSpawn    = false
 nGui.ZIndexBehavior  = Enum.ZIndexBehavior.Sibling
 nGui.IgnoreGuiInset  = true
@@ -1695,7 +1695,7 @@ end
 nShootBtn = (function()
     local btn = makeNativeBtn("Shoot Murd", function()
         local ok, err = pcall(doSingleShot)
-        if not ok then warn("[ShadowX] ShootMurd: " .. tostring(err)) end
+        if not ok then warn("[Waguri] ShootMurd: " .. tostring(err)) end
     end)
     btn.Visible = false
     return btn
@@ -1709,7 +1709,7 @@ nThrowBtn = (function()
             return
         end
         local ok, err = pcall(doThrowKnife)
-        if not ok then warn("[ShadowX] ThrowKnife: " .. tostring(err)) end
+        if not ok then warn("[Waguri] ThrowKnife: " .. tostring(err)) end
     end)
     btn.Visible = false
     return btn
@@ -1719,7 +1719,7 @@ end)()
 nGrabBtn = (function()
     local btn = makeNativeBtn("Grab Gun", function()
         local ok, err = pcall(doGrabGun)
-        if not ok then warn("[ShadowX] GrabGun: " .. tostring(err)) end
+        if not ok then warn("[Waguri] GrabGun: " .. tostring(err)) end
     end)
     btn.Visible = false
     return btn
@@ -1763,7 +1763,7 @@ local function doInvisToggle()
         task.wait(0.15)
 
         local seat = Instance.new("Seat")
-        seat.Name        = "ShadowX_InvisChair"
+        seat.Name        = "Waguri_InvisChair"
         seat.Anchored    = false
         seat.CanCollide  = false
         seat.Transparency = 1
@@ -1785,7 +1785,7 @@ local function doInvisToggle()
         setInvisBtn("[ON] Invisible")
     else
         if invisSeat and invisSeat.Parent then invisSeat:Destroy() end
-        local stray = workspace:FindFirstChild("ShadowX_InvisChair")
+        local stray = workspace:FindFirstChild("Waguri_InvisChair")
         if stray then stray:Destroy() end
         local hrp = workspace[lp.Name]:FindFirstChild("HumanoidRootPart")
         invisSeat = nil
@@ -1878,7 +1878,7 @@ PlayersTab:Button({
             return
         end
         local ok, err = pcall(doTp, tpTarget)
-        if not ok then warn("[ShadowX] Tp: " .. tostring(err)) end
+        if not ok then warn("[Waguri] Tp: " .. tostring(err)) end
     end
 })
 
@@ -1901,7 +1901,7 @@ PlayersTab:Button({
             return
         end
         local ok, err = pcall(doFling, flingTarget)
-        if not ok then warn("[ShadowX] Fling: " .. tostring(err)) end
+        if not ok then warn("[Waguri] Fling: " .. tostring(err)) end
     end
 })
 
@@ -2126,7 +2126,7 @@ MiscTab:Button({
 
 -- ── Credits Tab ───────────────────────────────────────────────────────────────
 CreditsTab:Paragraph({
-    Title         = "ShadowX | Official",
+    Title         = "Waguri | Official",
     Desc          = "Made by Jv3xz0. Join our Discord to stay updated with the latest features.",
     Color         = "Red",
     Thumbnail     = "rbxassetid://74135635728836",
@@ -2294,7 +2294,7 @@ lp.CharacterAdded:Connect(function(char)
     refreshLpMurd()
     if isInvisible then
         if invisSeat and invisSeat.Parent then invisSeat:Destroy() end
-        local stray = workspace:FindFirstChild("ShadowX_InvisChair")
+        local stray = workspace:FindFirstChild("Waguri_InvisChair")
         if stray then stray:Destroy() end
         invisSeat   = nil
         isInvisible = false
@@ -2306,7 +2306,7 @@ lp.CharacterAdded:Connect(function(char)
             if playersInRound[lp] then playersInRound[lp] = nil end
             if isInvisible then
                 if invisSeat and invisSeat.Parent then invisSeat:Destroy() end
-                local stray = workspace:FindFirstChild("ShadowX_InvisChair")
+                local stray = workspace:FindFirstChild("Waguri_InvisChair")
                 if stray then stray:Destroy() end
                 invisSeat   = nil
                 isInvisible = false
@@ -2364,11 +2364,11 @@ Workspace.DescendantAdded:Connect(function(desc)
         if autoGrabGunEnabled and not isLpMurd and not isLpSheriff and (playersInRound[lp] ~= nil) then
             task.defer(function()
                 local ok2, err2 = pcall(doGrabGun)
-                if not ok2 then warn("[ShadowX] GunDrop auto-grab: " .. tostring(err2)) end
+                if not ok2 then warn("[Waguri] GunDrop auto-grab: " .. tostring(err2)) end
             end)
         end
         local ok, err = pcall(attachGunDropHighlight, desc)
-        if not ok then warn("[ShadowX] GunDrop DescendantAdded: " .. tostring(err)) end
+        if not ok then warn("[Waguri] GunDrop DescendantAdded: " .. tostring(err)) end
         return
     end
     if desc:IsA("BasePart") and desc.Name == "Knife" then
@@ -2390,7 +2390,7 @@ for _, desc in ipairs(Workspace:GetDescendants()) do
         gunDropped   = true
         gunAvailable = true
         local ok, err = pcall(attachGunDropHighlight, desc)
-        if not ok then warn("[ShadowX] GunDrop startup: " .. tostring(err)) end
+        if not ok then warn("[Waguri] GunDrop startup: " .. tostring(err)) end
     end
 end
 
@@ -2473,7 +2473,7 @@ task.spawn(function()
             :WaitForChild("SurfaceGui", 5)
             :WaitForChild("Timer", 5)
     end)
-    if not ok or not result then warn("[ShadowX] RoundTimer: not found") return end
+    if not ok or not result then warn("[Waguri] RoundTimer: not found") return end
     timerLabel = result
     timerLabel:GetPropertyChangedSignal("Active"):Connect(function()
         if timerLabel.Active then
@@ -2510,7 +2510,7 @@ Window:Tag({
 })
 
 WindUI:Popup({
-    Title   = "MM2 ShadowX",
+    Title   = "MM2 Waguri",
     Icon    = "sword",
     Content = "Updates: Native action buttons (top-right), Kill All removed.", -- always tell me to change this
     Buttons = {
