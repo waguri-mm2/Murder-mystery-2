@@ -1461,7 +1461,6 @@ nLayout.Parent              = nFrame
 
 local BTN_W          = 160
 local BTN_H          = 45
-local PARTICLE_COUNT = 20
 
 local function makeNativeBtn(text, cb)
     local btn = Instance.new("TextButton")
