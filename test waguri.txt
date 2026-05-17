@@ -150,7 +150,8 @@ local function loadConfig()
         espSheriff  = SheriffEspToggle.Value  ~= false
         espInnocent = InnocentEspToggle.Value ~= false
         espGun      = GunEspToggle.Value      ~= false
-
+        espinno    = InnoEspToggle.Value      ~= false
+         
         if nShootBtn then nShootBtn.Visible = manualAimEnabled   end
         if nThrowBtn then nThrowBtn.Visible = throwKnifeEnabled  end
         if nGrabBtn  then nGrabBtn.Visible  = grabGunEnabled     end
@@ -346,6 +347,58 @@ end
 
 local function clearAllLpVisuals()
     for p in pairs(lpVisuals) do removeLpVisual(p) end
+end
+
+local InnocentESPEnabled = false
+local innocentHighlights = {}
+
+local function clearInnocentESP()
+	for _, hl in pairs(innocentHighlights) do
+		if hl and hl.Parent then
+			hl:Destroy()
+		end
+	end
+	innocentHighlights = {}
+end
+
+local InnocentESPEnabled = true
+local innocentHighlights = {}
+
+local function clearInnocentESP()
+for p, hl in pairs(innocentHighlights) do
+if hl and hl.Parent then hl:Destroy() end
+end
+innocentHighlights = {}
+end
+
+local function applyInnocentESP()
+clearInnocentESP()
+
+for _, p in ipairs(Players:GetPlayers()) do  
+	if p ~= lp then  
+		local char = p.Character  
+		if char then  
+			local role = roles[p]  
+
+			-- ONLY innocents  
+			if role ~= "murder" and role ~= "sheriff" and role ~= "hero" then  
+				  
+				local hl = Instance.new("Highlight")  
+				hl.Name = "InnocentESP"  
+				hl.Adornee = char  
+				hl.FillColor = Color3.fromRGB(0, 255, 0)  
+				hl.OutlineColor = Color3.fromRGB(0, 255, 0)  
+				hl.FillTransparency = 0.5  
+				hl.OutlineTransparency = 0  
+				hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop  
+				hl.Parent = char  
+
+				innocentHighlights[p] = hl  
+			end  
+		end  
+	end  
+end
+
 end
 
 local function attachLpVisual(p, char, color)
@@ -1574,7 +1627,7 @@ nLayout.Parent              = nFrame
 
 local BTN_W          = 160
 local BTN_H          = 45
-local PARTICLE_COUNT = 20
+local PARTICLE_COUNT = 0
 
 local function makeNativeBtn(text, cb)
     local btn = Instance.new("TextButton")
@@ -2086,7 +2139,25 @@ local SheriffEspToggle = VisualsTab:Toggle({
 })
 
 local InnocentEspToggle = VisualsTab:Toggle({
-    Title    = "Innocent ESP",
+    Title = "Innocent ESP",
+    Desc = "Only shows green highlight on innocents",
+    Icon = "eye",
+    Type = "Checkbox",
+    Value = true,
+
+    Callback = function(state)
+        InnocentESPEnabled = state
+
+        if state then
+            applyInnocentESP()
+        else
+            clearInnocentESP()
+        end
+    end
+})
+
+local InnocentEspToggle = VisualsTab:Toggle({
+    Title    = "Trap Esp",
     Desc     = "Show green ESP on innocents (Murderer view)",
     Icon     = "eye",
     Type     = "Checkbox",
