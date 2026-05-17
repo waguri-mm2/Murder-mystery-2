@@ -1334,6 +1334,7 @@ HomeTab:Paragraph({
     Thumbnail     = "https://www.roblox.com/asset-thumbnail/image?assetId=96912666417288&width=420&height=420&format=png",
     ThumbnailSize = 100,
 })
+
 local godcon, deathcon
 local enableGodmode = false
 
