@@ -1461,6 +1461,8 @@ nLayout.Parent              = nFrame
 
 -- ==================== CLEAN DRAGGABLE BUTTONS ====================
 
+-- ==================== NEW CLEAN BUTTONS (Like your example) ====================
+
 local nGui = Instance.new("ScreenGui")
 nGui.Name = "Waguri_Btns"
 nGui.ResetOnSpawn = false
@@ -1473,29 +1475,29 @@ invisSnd.SoundId = INVIS_SOUND_ID
 invisSnd.Volume = 0.5
 invisSnd.Parent = nGui
 
-local nFrame = Instance.new("Frame")
-nFrame.Name = "BtnContainer"
-nFrame.BackgroundTransparency = 1
-nFrame.AnchorPoint = Vector2.new(1, 0)
-nFrame.Position = UDim2.new(1, -10, 0, 70)
-nFrame.Size = UDim2.new(0, 220, 1, 0)
-nFrame.Parent = nGui
+-- Main Container (centered, draggable)
+local MainContainer = Instance.new("Frame")
+MainContainer.Name = "ButtonContainer"
+MainContainer.Size = UDim2.new(0, 240, 0, 300)
+MainContainer.Position = UDim2.new(0.5, -120, 0.4, 0)
+MainContainer.BackgroundTransparency = 1
+MainContainer.Parent = nGui
 
--- Draggable
+-- Make whole group draggable
 local dragging, dragInput, dragStart, startPos
-nFrame.InputBegan:Connect(function(input)
+MainContainer.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         dragging = true
         dragStart = input.Position
-        startPos = nFrame.Position
+        startPos = MainContainer.Position
     end
 end)
-nFrame.InputEnded:Connect(function(input)
+MainContainer.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         dragging = false
     end
 end)
-nFrame.InputChanged:Connect(function(input)
+MainContainer.InputChanged:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
         dragInput = input
     end
@@ -1503,61 +1505,58 @@ end)
 RunService.RenderStepped:Connect(function()
     if dragging and dragInput then
         local delta = dragInput.Position - dragStart
-        nFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        MainContainer.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
     end
 end)
 
-local nLayout = Instance.new("UIListLayout")
-nLayout.SortOrder = Enum.SortOrder.LayoutOrder
-nLayout.Padding = UDim.new(0, 10)        -- Increased spacing
-nLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
-nLayout.VerticalAlignment = Enum.VerticalAlignment.Top
-nLayout.Parent = nFrame
+local function createButton(text, callback, yOffset)
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(1, 0, 0, 55)
+    frame.Position = UDim2.new(0, 0, 0, yOffset)
+    frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    frame.Parent = MainContainer
 
-local function makeNativeBtn(text, cb)
+    local corner = Instance.new("UICorner", frame)
+    corner.CornerRadius = UDim.new(0, 10)
+
+    local stroke = Instance.new("UIStroke", frame)
+    stroke.Color = Color3.fromRGB(0, 170, 255)
+    stroke.Thickness = 2
+
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0, 210, 0, 58)
-    btn.BackgroundColor3 = Color3.fromRGB(18, 32, 55)   -- Dark Ocean/ Forest look
-    btn.Text = ""
-    btn.AutoButtonColor = false
-    btn.BorderSizePixel = 0
-    btn.ZIndex = 10
-    btn.Parent = nFrame
+    btn.Size = UDim2.new(1, 0, 1, 0)
+    btn.BackgroundTransparency = 1
+    btn.Text = text
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 15
+    btn.Parent = frame
 
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 14)
-
-    local stroke = Instance.new("UIStroke", btn)
-    stroke.Color = Color3.fromRGB(100, 230, 160)
-    stroke.Thickness = 2.5
-    stroke.Transparency = 0.15
-
-    local lbl = Instance.new("TextLabel", btn)
-    lbl.Size = UDim2.new(1, -30, 1, 0)
-    lbl.Position = UDim2.new(0, 22, 0, 0)
-    lbl.BackgroundTransparency = 1
-    lbl.Text = text
-    lbl.TextColor3 = Color3.fromRGB(255, 255, 255)
-    lbl.TextSize = 16
-    lbl.Font = Enum.Font.GothamSemibold
-    lbl.TextXAlignment = Enum.TextXAlignment.Left
-    lbl.ZIndex = 11
-
-    -- Hover Effect
-    btn.MouseEnter:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(35, 60, 85)}):Play()
-        TweenService:Create(stroke, TweenInfo.new(0.2), {Transparency = 0}):Play()
+    btn.MouseButton1Click:Connect(function()
+        task.spawn(callback)
     end)
 
-    btn.MouseLeave:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(18, 32, 55)}):Play()
-        TweenService:Create(stroke, TweenInfo.new(0.2), {Transparency = 0.15}):Play()
-    end)
-
-    btn.MouseButton1Click:Connect(function() task.spawn(cb) end)
-    btn.TouchTap:Connect(function() task.spawn(cb) end)
-
-    return btn
+    return frame
 end
+
+-- Create Buttons (with spacing)
+nShootBtn = createButton("Shoot Murderer", doSingleShot, 0)
+nThrowBtn = createButton("Throw Knife", function()
+    if not isLpMurd then
+        WindUI:Notify({Title = "Error", Content = "You are not the Murderer.", Duration = 2, Icon = "x"})
+        return
+    end
+    doThrowKnife()
+end, 65)
+
+nGrabBtn = createButton("Grab Gun", doGrabGun, 130)
+nInvisBtn = createButton("Invisible", doInvisToggle, 195)
+
+-- Default visibility
+nShootBtn.Visible = false
+nThrowBtn.Visible = false
+nGrabBtn.Visible = false
+nInvisBtn.Visible = false
 
 -- Create Buttons
 nShootBtn = makeNativeBtn("Shoot Murderer", doSingleShot)
