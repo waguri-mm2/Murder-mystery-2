@@ -104,7 +104,7 @@ local Window = WindUI:CreateWindow({
     Author      = "by waguri ofc",
     Folder      = "waguri",
     Transparent = true,
-    Theme       = "Dark",
+    Theme       = "Ocean Blue",
 })
 Window:ToggleTransparency(true)
 
@@ -185,7 +185,7 @@ local function loadConfig()
 end
 
 Window:EditOpenButton({
-    Title           = "ShadowX | Official",
+    Title           = "WAGURI MM2",
     Icon            = "monitor",
     CornerRadius    = UDim.new(0, 16),
     StrokeThickness = 2,
