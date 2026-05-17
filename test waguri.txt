@@ -1454,6 +1454,8 @@ nFrame.Parent                 = nGui
 
 -- 🧲 DRAGGABLE BUTTON CONTAINER
 
+local dragEnabled = true
+
 local UserInputService = game:GetService("UserInputService")
 
 local dragging = false
