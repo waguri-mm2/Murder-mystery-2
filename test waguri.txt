@@ -2096,7 +2096,7 @@ local ServerInfo = MiscTab:Paragraph({
     Desc          = string.format("Game: %s\nPlace ID: %d\nJob ID: %s\nPlayers: %d/%d",
         gameName, game.PlaceId, game.JobId, #Players:GetPlayers(), Players.MaxPlayers),
     Color         = "Blue",
-    Thumbnail     = "rbxassetid://77351600115405",
+    Thumbnail     = "rbxassetid://74135635728836",
     ThumbnailSize = 100,
 })
 
@@ -2127,9 +2127,9 @@ MiscTab:Button({
 -- ── Credits Tab ───────────────────────────────────────────────────────────────
 CreditsTab:Paragraph({
     Title         = "Waguri | Official",
-    Desc          = "Made by waguri.",
-    Color         = "Blue",
-    Thumbnail     = "rbxassetid://77351600115405",
+    Desc          = "Made by Jv3xz0. Join our Discord to stay updated with the latest features.",
+    Color         = "Red",
+    Thumbnail     = "rbxassetid://74135635728836",
     ThumbnailSize = 140,
     Buttons = {
         {
