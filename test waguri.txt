@@ -1481,7 +1481,7 @@ dragging = true
 end)
 
 UserInputService.InputChanged:Connect(function(input)
-	if dragEnabled and dragging and (
+	if dragEnabled and dragging then
 		input.UserInputType == Enum.UserInputType.MouseMovement
 		or input.UserInputType == Enum.UserInputType.Touch
 	) then
