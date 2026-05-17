@@ -1420,7 +1420,8 @@ local FakeBombToggle = MainTab:Toggle({
     end
 })
 
--- ── Native Action Buttons (top-right, red, mobile-friendly) ───────────────────
+-- ==================== CLEAN BUTTONS (No Particles) ====================
+
 local invisNativeLbl = nil
 
 local function setInvisBtn(title)
@@ -1431,30 +1432,29 @@ local function resetInvisBtn()
     setInvisBtn("Invisible")
 end
 
--- GUI setup
+-- ScreenGui Setup
 local nGui = Instance.new("ScreenGui")
-nGui.Name            = "Waguri_Btns"
-nGui.ResetOnSpawn    = false
-nGui.ZIndexBehavior  = Enum.ZIndexBehavior.Sibling
-nGui.IgnoreGuiInset  = true
-nGui.Parent          = getGuiParent()
+nGui.Name = "Waguri_Btns"
+nGui.ResetOnSpawn = false
+nGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+nGui.IgnoreGuiInset = true
+nGui.Parent = getGuiParent()
 
 invisSnd = Instance.new("Sound")
 invisSnd.SoundId = INVIS_SOUND_ID
-invisSnd.Volume  = 0.5
-invisSnd.Parent  = nGui
+invisSnd.Volume = 0.5
+invisSnd.Parent = nGui
 
 local nFrame = Instance.new("Frame")
-nFrame.Name                   = "BtnContainer"
+nFrame.Name = "BtnContainer"
 nFrame.BackgroundTransparency = 1
-nFrame.AnchorPoint            = Vector2.new(1, 0)
-nFrame.Position               = UDim2.new(1, -6, 0, 52)
-nFrame.Size                   = UDim2.new(0, 124, 1, 0)
-nFrame.Parent                 = nGui
+nFrame.AnchorPoint = Vector2.new(1, 0)
+nFrame.Position = UDim2.new(1, -10, 0, 70)
+nFrame.Size = UDim2.new(0, 210, 1, 0)
+nFrame.Parent = nGui
 
--- Make Button Container Draggable
+-- Draggable
 local dragging, dragInput, dragStart, startPos
-
 nFrame.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         dragging = true
@@ -1462,19 +1462,16 @@ nFrame.InputBegan:Connect(function(input)
         startPos = nFrame.Position
     end
 end)
-
 nFrame.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         dragging = false
     end
 end)
-
 nFrame.InputChanged:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
         dragInput = input
     end
 end)
-
 RunService.RenderStepped:Connect(function()
     if dragging and dragInput then
         local delta = dragInput.Position - dragStart
@@ -1483,73 +1480,76 @@ RunService.RenderStepped:Connect(function()
 end)
 
 local nLayout = Instance.new("UIListLayout")
-nLayout.SortOrder           = Enum.SortOrder.LayoutOrder
-nLayout.Padding             = UDim.new(0, 4)
+nLayout.SortOrder = Enum.SortOrder.LayoutOrder
+nLayout.Padding = UDim.new(0, 8)
 nLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
-nLayout.VerticalAlignment   = Enum.VerticalAlignment.Top
-nLayout.Parent              = nFrame
+nLayout.VerticalAlignment = Enum.VerticalAlignment.Top
+nLayout.Parent = nFrame
 
-local BTN_W          = 160
-local BTN_H          = 45
-local PARTICLE_COUNT = 20
-
+-- Clean Button Function
 local function makeNativeBtn(text, cb)
     local btn = Instance.new("TextButton")
-    btn.Size             = UDim2.new(0, 180, 0, 55)        -- Nice size
-    btn.BackgroundColor3 = Color3.fromRGB(15, 25, 45)      -- Ocean theme dark
-    btn.Text             = ""
-    btn.AutoButtonColor  = false
-    btn.BorderSizePixel  = 0
-    btn.Parent           = nFrame
-    btn.ZIndex           = 10
+    btn.Size = UDim2.new(0, 200, 0, 55)
+    btn.BackgroundColor3 = Color3.fromRGB(22, 35, 55)
+    btn.Text = ""
+    btn.AutoButtonColor = false
+    btn.BorderSizePixel = 0
+    btn.ZIndex = 10
+    btn.Parent = nFrame
 
-    -- Corner
-    local corner = Instance.new("UICorner", btn)
-    corner.CornerRadius = UDim.new(0, 10)
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 12)
 
-    -- Stroke (Ocean Blue)
     local stroke = Instance.new("UIStroke", btn)
-    stroke.Color        = Color3.fromRGB(0, 170, 255)
-    stroke.Thickness    = 2
-    stroke.Transparency = 0.4
+    stroke.Color = Color3.fromRGB(100, 230, 160)
+    stroke.Thickness = 2.2
+    stroke.Transparency = 0.2
 
-    -- Label
     local lbl = Instance.new("TextLabel", btn)
-    lbl.Size                   = UDim2.new(1, -20, 1, 0)
-    lbl.Position               = UDim2.new(0, 10, 0, 0)
+    lbl.Size = UDim2.new(1, -25, 1, 0)
+    lbl.Position = UDim2.new(0, 20, 0, 0)
     lbl.BackgroundTransparency = 1
-    lbl.Text                   = text
-    lbl.TextColor3             = Color3.fromRGB(255, 255, 255)
-    lbl.TextSize               = 15
-    lbl.Font                   = Enum.Font.GothamSemibold
-    lbl.TextXAlignment         = Enum.TextXAlignment.Left
-    lbl.ZIndex                 = 11
+    lbl.Text = text
+    lbl.TextColor3 = Color3.fromRGB(255, 255, 255)
+    lbl.TextSize = 15.5
+    lbl.Font = Enum.Font.GothamSemibold
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.ZIndex = 11
 
     -- Hover Effect
     btn.MouseEnter:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(25, 40, 70)}):Play()
-        TweenService:Create(stroke, TweenInfo.new(0.15), {Transparency = 0}):Play()
+        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(35, 55, 80)}):Play()
+        TweenService:Create(stroke, TweenInfo.new(0.2), {Transparency = 0}):Play()
     end)
 
     btn.MouseLeave:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(15, 25, 45)}):Play()
-        TweenService:Create(stroke, TweenInfo.new(0.15), {Transparency = 0.4}):Play()
+        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(22, 35, 55)}):Play()
+        TweenService:Create(stroke, TweenInfo.new(0.2), {Transparency = 0.2}):Play()
     end)
 
-    -- Click
-    local firing = false
-    local function onClick()
-        if firing then return end
-        firing = true
-        task.spawn(cb)
-        task.delay(0.3, function() firing = false end)
-    end
-
-    btn.MouseButton1Click:Connect(onClick)
-    btn.TouchTap:Connect(onClick)
+    btn.MouseButton1Click:Connect(function() task.spawn(cb) end)
+    btn.TouchTap:Connect(function() task.spawn(cb) end)
 
     return btn
 end
+
+-- Create the 4 buttons
+nShootBtn = makeNativeBtn("Shoot Murderer", doSingleShot)
+nShootBtn.Visible = false
+
+nThrowBtn = makeNativeBtn("Throw Knife", function()
+    if not isLpMurd then
+        WindUI:Notify({Title = "Error", Content = "You are not the Murderer.", Duration = 2, Icon = "x"})
+        return
+    end
+    doThrowKnife()
+end)
+nThrowBtn.Visible = false
+
+nGrabBtn = makeNativeBtn("Grab Gun", doGrabGun)
+nGrabBtn.Visible = false
+
+nInvisBtn = makeNativeBtn("Invisible", doInvisToggle)
+nInvisBtn.Visible = false
 
     local lbl = Instance.new("TextLabel", btn)
     lbl.Size                   = UDim2.new(1, -8, 1, 0)
