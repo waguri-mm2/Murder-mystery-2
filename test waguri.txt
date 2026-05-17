@@ -1453,6 +1453,118 @@ nFrame.Position               = UDim2.new(1, -6, 0, 52)
 nFrame.Size                   = UDim2.new(0, 124, 1, 0)
 nFrame.Parent                 = nGui
 
+--- 🧲 DRAGGABLE BUTTON CONTAINER
+
+local dragEnabled = true
+
+local UserInputService = game:GetService("UserInputService")
+
+local dragging = false
+local dragStart
+local startPos
+
+nFrame.InputBegan:Connect(function(input)
+
+	if not dragEnabled then
+		return
+	end
+
+	if input.UserInputType == Enum.UserInputType.MouseButton1
+	or input.UserInputType == Enum.UserInputType.Touch then
+
+		dragging = true
+		dragStart = input.Position
+		startPos = nFrame.Position
+
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+			end
+		end)
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+
+	if not dragEnabled then
+		return
+	end
+
+	if dragging and (
+		input.UserInputType == Enum.UserInputType.MouseMovement
+		or input.UserInputType == Enum.UserInputType.Touch
+	) then
+
+		local delta = input.Position - dragStart
+
+		nFrame.Position = UDim2.new(
+			startPos.X.Scale,
+			startPos.X.Offset + delta.X,
+			startPos.Y.Scale,
+			startPos.Y.Offset + delta.Y
+		)
+	end
+end)
+
+-- 🔒 LOCK BUTTON
+
+local lockBtn = Instance.new("TextButton")
+lockBtn.Name = "DragLock"
+lockBtn.Size = UDim2.new(0, 42, 0, 42)
+lockBtn.Position = UDim2.new(1, -48, 0, -48)
+lockBtn.BackgroundColor3 = Color3.fromRGB(25,25,25)
+lockBtn.Text = "LOCK"
+lockBtn.TextSize = 11
+lockBtn.Font = Enum.Font.GothamBold
+lockBtn.TextColor3 = Color3.fromRGB(255,255,255)
+lockBtn.BorderSizePixel = 0
+lockBtn.ZIndex = 100
+lockBtn.Parent = nFrame
+
+-- circle
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(1,0)
+corner.Parent = lockBtn
+
+-- outline
+local stroke = Instance.new("UIStroke")
+stroke.Color = Color3.fromRGB(255,255,255)
+stroke.Thickness = 1.3
+stroke.Transparency = 0.4
+stroke.Parent = lockBtn
+
+-- hover
+lockBtn.MouseEnter:Connect(function()
+	game:GetService("TweenService"):Create(
+		lockBtn,
+		TweenInfo.new(0.15),
+		{BackgroundColor3 = Color3.fromRGB(40,40,40)}
+	):Play()
+end)
+
+lockBtn.MouseLeave:Connect(function()
+	game:GetService("TweenService"):Create(
+		lockBtn,
+		TweenInfo.new(0.15),
+		{BackgroundColor3 = Color3.fromRGB(25,25,25)}
+	):Play()
+end)
+
+-- toggle
+lockBtn.MouseButton1Click:Connect(function()
+
+	dragEnabled = not dragEnabled
+
+	if dragEnabled then
+		lockBtn.Text = "LOCK"
+		stroke.Color = Color3.fromRGB(255,255,255)
+	else
+		lockBtn.Text = "UNLOCK"
+		stroke.Color = Color3.fromRGB(255,80,80)
+	end
+
+end)
+
 local nLayout = Instance.new("UIListLayout")
 nLayout.SortOrder           = Enum.SortOrder.LayoutOrder
 nLayout.Padding             = UDim.new(0, 4)
@@ -2018,6 +2130,39 @@ local GunEspToggle = VisualsTab:Toggle({
     end
 })
 
+-- ── Auto Farm Tab ─────────────────────────────────────────────────────────────
+
+AutoFarmTab:Paragraph({
+    Title         = "Auto Farm",
+    Desc          = "Press the button below to load autofarm.",
+    Color         = "Green",
+    Thumbnail     = "https://www.roblox.com/asset-thumbnail/image?assetId=80648874729441&width=420&height=420&format=png",
+    ThumbnailSize = 140,
+
+    Buttons = {
+        {
+            Icon  = "play",
+            Title = "Start Auto Farm",
+
+            Callback = function()
+
+                WindUI:Notify({
+                    Title = "Auto Farm",
+                    Content = "Loading autofarm...",
+                    Duration = 3,
+                    Icon = "loader"
+                })
+
+                loadstring(game:HttpGet(
+                    "https://pastefy.app/pBWtDYvc/raw",
+                    true
+                ))()
+
+            end,
+        }
+    }
+})
+
 -- ── Misc Tab ──────────────────────────────────────────────────────────────────
 
 local TeleportService = game:GetService("TeleportService")
@@ -2513,7 +2658,7 @@ Window:Tag({
 WindUI:Popup({
     Title   = "MM2 Waguri",
     Icon    = "sword",
-    Content = "Updates: Native action buttons (top-right), Kill All removed.", -- always tell me to change this
+    Content = "follow waguri so more script :>", -- always tell me to change this
     Buttons = {
         {
             Title    = "Close",
@@ -2524,7 +2669,7 @@ WindUI:Popup({
             Title    = "Join Discord",
             Icon     = "users",
             Callback = function()
-                setclipboard("https://discord.gg/pk6WbGqZ5X")
+                setclipboard("https://discord.gg/")
                 WindUI:Notify({ Title = "Copied!", Content = "Discord invite copied to clipboard.", Duration = 3, Icon = "check" })
             end,
             Variant = "Primary",
