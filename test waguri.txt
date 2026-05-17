@@ -1424,8 +1424,8 @@ local FakeBombToggle = MainTab:Toggle({
 local fakeBombLoaded = false
 
 local FakeBombToggle = MainTab:Toggle({
-    Title = "Fake Bomb",
-    Desc = "Waguri Bomb Jump",
+    Title = "Fake Bomb button",
+    Desc = "enable a button one:)",
     Type = "Checkbox",
     Value = false,
 
