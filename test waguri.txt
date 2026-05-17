@@ -42,7 +42,7 @@ local lockedStats         = {}
 local isInvisible   = false
 local invisSeat = nil
 local invisSnd  = nil
-local INVIS_SOUND_ID = "rbxassetid://942127495"
+local INVIS_SOUND_ID = "rbxassetid://115738087063586"
 
 local roles             = {}
 local stickyRoles       = {}
@@ -198,6 +198,7 @@ Window:EditOpenButton({
 local MainTab     = Window:Tab({ Title = "Main",     Icon = "sword"    })
 local PlayersTab  = Window:Tab({ Title = "Players",  Icon = "users"    })
 local VisualsTab  = Window:Tab({ Title = "Visuals",  Icon = "eye"      })
+local AutoFarmTab = Window:Tab({ Title = "Auto Farm", Icon = "star"    })
 local MiscTab     = Window:Tab({ Title = "Misc",     Icon = "info"     })
 local CreditsTab  = Window:Tab({ Title = "Credits",  Icon = "heart"    })
 local SettingsTab = Window:Tab({ Title = "Settings", Icon = "settings" })
@@ -2096,7 +2097,7 @@ local ServerInfo = MiscTab:Paragraph({
     Desc          = string.format("Game: %s\nPlace ID: %d\nJob ID: %s\nPlayers: %d/%d",
         gameName, game.PlaceId, game.JobId, #Players:GetPlayers(), Players.MaxPlayers),
     Color         = "Blue",
-    Thumbnail     = "rbxassetid://74135635728836",
+    Thumbnail = "https://www.roblox.com/asset-thumbnail/image?assetId=80648874729441&width=420&height=420&format=png",
     ThumbnailSize = 100,
 })
 
@@ -2127,9 +2128,9 @@ MiscTab:Button({
 -- ── Credits Tab ───────────────────────────────────────────────────────────────
 CreditsTab:Paragraph({
     Title         = "Waguri | Official",
-    Desc          = "Made by Jv3xz0. Join our Discord to stay updated with the latest features.",
+    Desc          = "Made by waguri def not lying:<",
     Color         = "Red",
-    Thumbnail     = "rbxassetid://74135635728836",
+    Thumbnail = "https://www.roblox.com/asset-thumbnail/image?assetId=80648874729441&width=420&height=420&format=png",
     ThumbnailSize = 140,
     Buttons = {
         {
