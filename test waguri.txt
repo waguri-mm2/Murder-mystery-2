@@ -42,7 +42,7 @@ local lockedStats         = {}
 local isInvisible   = false
 local invisSeat = nil
 local invisSnd  = nil
-local INVIS_SOUND_ID = "rbxassetid://942127495"
+local INVIS_SOUND_ID = "rbxassetid://115738087063586"
 
 local roles             = {}
 local stickyRoles       = {}
@@ -2208,7 +2208,7 @@ local ServerInfo = MiscTab:Paragraph({
     Desc          = string.format("Game: %s\nPlace ID: %d\nJob ID: %s\nPlayers: %d/%d",
         gameName, game.PlaceId, game.JobId, #Players:GetPlayers(), Players.MaxPlayers),
     Color         = "Blue",
-    Thumbnail     = "rbxassetid://74135635728836",
+    Thumbnail     = "rbxassetid://80648874729441",
     ThumbnailSize = 100,
 })
 
@@ -2239,9 +2239,9 @@ MiscTab:Button({
 -- ── Credits Tab ───────────────────────────────────────────────────────────────
 CreditsTab:Paragraph({
     Title         = "Waguri | Official",
-    Desc          = "Made by Jv3xz0. Join our Discord to stay updated with the latest features.",
+    Desc          = "Made by waguri so pls follow me :<",
     Color         = "Red",
-    Thumbnail     = "rbxassetid://74135635728836",
+    Thumbnail     = "rbxassetid://80648874729441",
     ThumbnailSize = 140,
     Buttons = {
         {
@@ -2615,7 +2615,7 @@ task.spawn(function()
 end)
 
 Window:Tag({
-    Title  = "V2.120.24", -- always tell me to change this!
+    Title  = "V1.20", -- always tell me to change this!
     Icon   = "github",
     Color  = Color3.fromHex("#30ff6a"),
     Radius = 13,
@@ -2624,7 +2624,7 @@ Window:Tag({
 WindUI:Popup({
     Title   = "MM2 Waguri",
     Icon    = "sword",
-    Content = "Updates: Native action buttons (top-right), Kill All removed.", -- always tell me to change this
+    Content = "waguri on the moon", -- always tell me to change this
     Buttons = {
         {
             Title    = "Close",
@@ -2635,7 +2635,7 @@ WindUI:Popup({
             Title    = "Join Discord",
             Icon     = "users",
             Callback = function()
-                setclipboard("https://discord.gg/pk6WbGqZ5X")
+                setclipboard("https://discord.gg/")
                 WindUI:Notify({ Title = "Copied!", Content = "Discord invite copied to clipboard.", Duration = 3, Icon = "check" })
             end,
             Variant = "Primary",
