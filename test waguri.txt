@@ -1495,94 +1495,61 @@ local PARTICLE_COUNT = 20
 
 local function makeNativeBtn(text, cb)
     local btn = Instance.new("TextButton")
-btn.Size             = UDim2.new(0, 170, 0, 52)           -- Wider
-btn.BackgroundColor3 = Color3.fromRGB(10, 20, 40)         -- Ocean Blue dark
-btn.Text             = ""
-btn.AutoButtonColor  = false
-btn.BorderSizePixel  = 0
-btn.Parent           = nFrame
+    btn.Size             = UDim2.new(0, 180, 0, 55)        -- Nice size
+    btn.BackgroundColor3 = Color3.fromRGB(15, 25, 45)      -- Ocean theme dark
+    btn.Text             = ""
+    btn.AutoButtonColor  = false
+    btn.BorderSizePixel  = 0
+    btn.Parent           = nFrame
+    btn.ZIndex           = 10
 
-local corner = Instance.new("UICorner", btn)
-corner.CornerRadius = UDim.new(0, 12)
+    -- Corner
+    local corner = Instance.new("UICorner", btn)
+    corner.CornerRadius = UDim.new(0, 10)
 
-local stroke = Instance.new("UIStroke", btn)
-stroke.Color        = Color3.fromRGB(0, 180, 255)
-stroke.Thickness    = 2.5
-stroke.Transparency = 0.2
-
-    -- Glow effect
-    local glow = Instance.new("Frame", btn)
-    glow.Size = UDim2.new(1, 0, 1, 0)
-    glow.BackgroundTransparency = 1
-    glow.ZIndex = 0
-    local glowStroke = Instance.new("UIStroke", glow)
-    glowStroke.Thickness = 6
-    glowStroke.Color = Color3.fromRGB(0, 180, 255)
-    glowStroke.Transparency = 0.7
-    Instance.new("UICorner", glow).CornerRadius = UDim.new(0, 12)
+    -- Stroke (Ocean Blue)
+    local stroke = Instance.new("UIStroke", btn)
+    stroke.Color        = Color3.fromRGB(0, 170, 255)
+    stroke.Thickness    = 2
+    stroke.Transparency = 0.4
 
     -- Label
     local lbl = Instance.new("TextLabel", btn)
-    lbl.Size = UDim2.new(1, -10, 1, 0)
+    lbl.Size                   = UDim2.new(1, -20, 1, 0)
+    lbl.Position               = UDim2.new(0, 10, 0, 0)
     lbl.BackgroundTransparency = 1
-    lbl.Text = text
-    lbl.TextColor3 = Color3.fromRGB(255, 255, 255)
-    lbl.TextSize = 14
-    lbl.Font = Enum.Font.GothamBold
-    lbl.TextTruncate = Enum.TextTruncate.AtEnd
-    lbl.ZIndex = 3
+    lbl.Text                   = text
+    lbl.TextColor3             = Color3.fromRGB(255, 255, 255)
+    lbl.TextSize               = 15
+    lbl.Font                   = Enum.Font.GothamSemibold
+    lbl.TextXAlignment         = Enum.TextXAlignment.Left
+    lbl.ZIndex                 = 11
 
-    -- Hover & Click Effects (Improved)
+    -- Hover Effect
     btn.MouseEnter:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(25, 35, 55)}):Play()
-        TweenService:Create(stroke, TweenInfo.new(0.2), {Transparency = 0}):Play()
+        TweenService:Create(btn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(25, 40, 70)}):Play()
+        TweenService:Create(stroke, TweenInfo.new(0.15), {Transparency = 0}):Play()
     end)
 
     btn.MouseLeave:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(15, 15, 25)}):Play()
-        TweenService:Create(stroke, TweenInfo.new(0.2), {Transparency = 0.3}):Play()
+        TweenService:Create(btn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(15, 25, 45)}):Play()
+        TweenService:Create(stroke, TweenInfo.new(0.15), {Transparency = 0.4}):Play()
     end)
 
-    -- Keep the original particle + click logic
-    -- ... (rest of your original makeNativeBtn code remains the same)
-
-    -- Scale instance for hover/press
-    local sc = Instance.new("UIScale", btn)
-    sc.Scale = 1
-
-    -- Clip frame for particles
-    local clip = Instance.new("Frame", btn)
-    clip.Size                   = UDim2.new(1, 0, 1, 0)
-    clip.BackgroundTransparency = 1
-    clip.ClipsDescendants       = true
-    clip.ZIndex                 = 1
-    Instance.new("UICorner", clip).CornerRadius = UDim.new(0, 8)
-
-    -- Particles
-    local pData = {}
-    local rng   = Random.new()
-    for i = 1, PARTICLE_COUNT do
-        local sz = rng:NextInteger(2, 5)
-        local f  = Instance.new("Frame", clip)
-        f.Size                   = UDim2.new(0, sz, 0, sz)
-        f.BorderSizePixel        = 0
-        f.BackgroundColor3       = Color3.fromHSV(i / PARTICLE_COUNT, 1, 1)
-        f.BackgroundTransparency = rng:NextNumber(0, 0.25)
-        f.ZIndex                 = 1
-        Instance.new("UICorner", f).CornerRadius = UDim.new(1, 0)
-        local px = rng:NextInteger(0, BTN_W - sz)
-        local py = rng:NextInteger(0, BTN_H - sz)
-        f.Position = UDim2.new(0, px, 0, py)
-        pData[i] = {
-            f   = f,
-            x   = px, y   = py,
-            vx  = rng:NextNumber(-20, 20),
-            vy  = rng:NextNumber(-20, 20),
-            hue = i / PARTICLE_COUNT,
-            dh  = rng:NextNumber(0.08, 0.25) * (rng:NextNumber() < 0.5 and 1 or -1),
-            sz  = sz,
-        }
+    -- Click
+    local firing = false
+    local function onClick()
+        if firing then return end
+        firing = true
+        task.spawn(cb)
+        task.delay(0.3, function() firing = false end)
     end
+
+    btn.MouseButton1Click:Connect(onClick)
+    btn.TouchTap:Connect(onClick)
+
+    return btn
+end
 
     local lbl = Instance.new("TextLabel", btn)
     lbl.Size                   = UDim2.new(1, -8, 1, 0)
@@ -1745,26 +1712,23 @@ stroke.Transparency = 0.2
     return btn, lbl
 end
 
--- ==================== NATIVE BUTTONS ====================
+-- ==================== CLEAN NATIVE BUTTONS ====================
 nShootBtn = makeNativeBtn("Shoot Murderer", function()
-    local ok, err = pcall(doSingleShot)
-    if not ok then warn("[Waguri] Shoot: " .. tostring(err)) end
+    pcall(doSingleShot)
 end)
 nShootBtn.Visible = false
 
 nThrowBtn = makeNativeBtn("Throw Knife", function()
     if not isLpMurd then
-        WindUI:Notify({ Title = "Throw Knife", Content = "You are not the Murderer.", Duration = 2, Icon = "x" })
+        WindUI:Notify({ Title = "Error", Content = "You are not the Murderer.", Duration = 2, Icon = "x" })
         return
     end
-    local ok, err = pcall(doThrowKnife)
-    if not ok then warn("[Waguri] ThrowKnife: " .. tostring(err)) end
+    pcall(doThrowKnife)
 end)
 nThrowBtn.Visible = false
 
 nGrabBtn = makeNativeBtn("Grab Gun", function()
-    local ok, err = pcall(doGrabGun)
-    if not ok then warn("[Waguri] GrabGun: " .. tostring(err)) end
+    pcall(doGrabGun)
 end)
 nGrabBtn.Visible = false
 
