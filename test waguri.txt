@@ -198,9 +198,8 @@ Window:EditOpenButton({
 local MainTab     = Window:Tab({ Title = "Main",     Icon = "sword"    })
 local PlayersTab  = Window:Tab({ Title = "Players",  Icon = "users"    })
 local VisualsTab  = Window:Tab({ Title = "Visuals",  Icon = "eye"      })
-local AutoFarmTab = Window:Tab({ Title = "Auto Farm", Icon = "star"    })
 local MiscTab     = Window:Tab({ Title = "Misc",     Icon = "info"     })
-local CreditsTab  = Window:Tab({ Title = "Credits",  Icon = "heart"    })
+local AutoFarmTab  = Window:Tab({ Title = "Auto Farm",  Icon = "heart"    })
 local SettingsTab = Window:Tab({ Title = "Settings", Icon = "settings" })
 
 local function lockHumanoidStat(hum, prop, val)
@@ -2270,20 +2269,34 @@ MiscTab:Button({
     Callback = hopToRandom,
 })
 
--- ── Credits Tab ───────────────────────────────────────────────────────────────
-CreditsTab:Paragraph({
-    Title         = "Waguri | Official",
-    Desc          = "Made by waguri so pls follow me :<",
-    Color         = "Purple",
-    Thumbnail = "https://www.roblox.com/asset-thumbnail/image?assetId=80648874729441&width=420&height=420&format=png",
+-- ── Auto Farm Tab ─────────────────────────────────────────────────────────────
+
+AutoFarmTab:Paragraph({
+    Title         = "Auto Farm",
+    Desc          = "Press the button below to load autofarm.",
+    Color         = "Green",
+    Thumbnail     = "https://www.roblox.com/asset-thumbnail/image?assetId=80648874729441&width=420&height=420&format=png",
     ThumbnailSize = 140,
+
     Buttons = {
         {
-            Icon     = "users",
-            Title    = "Discord",
+            Icon  = "play",
+            Title = "Start Auto Farm",
+
             Callback = function()
-                setclipboard("https://discord.gg/pk6WbGqZ5X")
-                WindUI:Notify({ Title = "Copied!", Content = "Discord invite copied to clipboard.", Duration = 3, Icon = "check" })
+
+                WindUI:Notify({
+                    Title = "Auto Farm",
+                    Content = "Loading autofarm...",
+                    Duration = 3,
+                    Icon = "loader"
+                })
+
+                loadstring(game:HttpGet(
+                    "https://pastefy.app/pBWtDYvc/raw",
+                    true
+                ))()
+
             end,
         }
     }
