@@ -1393,15 +1393,15 @@ HomeTab:Toggle({
                 local char = lp.Character
                 local hrp  = char and char:FindFirstChild("HumanoidRootPart")
                 if hrp then
-                    local vel = hrp.AssemblyLinearVelocity
-                    hrp.AssemblyLinearVelocity = vel * 9e8 + Vector3.new(0, 9e8, 0)
+                    local vel = hrp.Velocity
+                    hrp.Velocity = vel * 9e8 + Vector3.new(0, 9e8, 0)
                     RunService.RenderStepped:Wait()
                     if char and char.Parent and hrp and hrp.Parent then
-                        hrp.AssemblyLinearVelocity = vel
+                        hrp.Velocity = vel
                     end
                     RunService.Stepped:Wait()
                     if char and char.Parent and hrp and hrp.Parent then
-                        hrp.AssemblyLinearVelocity = vel + Vector3.new(0, movel, 0)
+                        hrp.Velocity = vel + Vector3.new(0, movel, 0)
                         movel = movel * -1
                     end
                 end
@@ -1411,7 +1411,8 @@ HomeTab:Toggle({
     end
 })
 
--- ── Home Tab: Anti Fling (Noclip Players) ────────────────────────────────────
+local antiFlingEnabled = false
+
 HomeTab:Toggle({
     Title    = "Anti Fling",
     Desc     = "Disables collision on all other players so they can't fling you",
@@ -1419,6 +1420,8 @@ HomeTab:Toggle({
     Type     = "Checkbox",
     Value    = false,
     Callback = function(Value)
+        antiFlingEnabled = Value
+
         if not Value then
             for _, player in pairs(Players:GetPlayers()) do
                 if player ~= lp and player.Character then
@@ -1431,8 +1434,9 @@ HomeTab:Toggle({
             end
             return
         end
+
         task.spawn(function()
-            while Value do
+            while antiFlingEnabled do
                 for _, player in pairs(Players:GetPlayers()) do
                     if player ~= lp and player.Character then
                         for _, v in pairs(player.Character:GetDescendants()) do
