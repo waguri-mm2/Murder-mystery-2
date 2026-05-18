@@ -1411,6 +1411,43 @@ HomeTab:Toggle({
     end
 })
 
+-- ── Home Tab: Anti Fling (Noclip Players) ────────────────────────────────────
+HomeTab:Toggle({
+    Title    = "Anti Fling",
+    Desc     = "Disables collision on all other players so they can't fling you",
+    Icon     = "shield",
+    Type     = "Checkbox",
+    Value    = false,
+    Callback = function(Value)
+        if not Value then
+            for _, player in pairs(Players:GetPlayers()) do
+                if player ~= lp and player.Character then
+                    for _, v in pairs(player.Character:GetDescendants()) do
+                        if v:IsA("BasePart") then
+                            v.CanCollide = true
+                        end
+                    end
+                end
+            end
+            return
+        end
+        task.spawn(function()
+            while Value do
+                for _, player in pairs(Players:GetPlayers()) do
+                    if player ~= lp and player.Character then
+                        for _, v in pairs(player.Character:GetDescendants()) do
+                            if v:IsA("BasePart") then
+                                v.CanCollide = false
+                            end
+                        end
+                    end
+                end
+                task.wait()
+            end
+        end)
+    end
+})
+
 HomeTab:Button({
     Title    = "Fling Murderer",
     Desc     = "Flings the current murderer",
