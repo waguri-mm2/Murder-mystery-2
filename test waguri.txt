@@ -58,7 +58,7 @@ local gunDropped        = false
 local roundActive       = false
 local gunAvailable      = false
 local timerLabel        = nil
-local nShootBtn, nThrowBtn, nGrabBtn, nInvisBtn, nYukioShootBtn, nYukioKillAllBtn, nYukioGunBtn
+local nInvisBtn         = nil
 local roundId           = 0
 local knifeSpeedBuf     = {}
 local fbConn            = nil
@@ -139,7 +139,6 @@ local function loadConfig()
 
         silentAimEnabled    = SilentAimToggle.Value    or false
         manualAimEnabled    = ManualAimToggle.Value     or false
-        throwKnifeEnabled   = ThrowKnifeToggle.Value   or false
         grabGunEnabled      = GrabGunToggle.Value       or false
         autoGrabGunEnabled  = AutoGrabGunToggle.Value  or false
         fakeBombEnabled     = FakeBombToggle.Value      or false
@@ -151,15 +150,10 @@ local function loadConfig()
         espInnocent = InnocentEspToggle.Value ~= false
         espGun      = GunEspToggle.Value      ~= false
 
-        if nShootBtn then nShootBtn.Visible = manualAimEnabled end
-        if nThrowBtn then nThrowBtn.Visible = throwKnifeEnabled end
-        if nGrabBtn  then nGrabBtn.Visible  = grabGunEnabled end
-        if nInvisBtn then nInvisBtn.Visible = invisibleEnabled end
-        
-        -- Yukio buttons visibility
         if nYukioShootBtn then nYukioShootBtn.Visible = manualAimEnabled end
         if nYukioKillAllBtn then nYukioKillAllBtn.Visible = isLpMurd end
         if nYukioGunBtn then nYukioGunBtn.Visible = grabGunEnabled end
+        if nInvisBtn then nInvisBtn.Visible = invisibleEnabled end
 
         if TpDropdown.Value    and TpDropdown.Value.Title    then tpTarget    = TpDropdown.Value.Title    end
         if FlingDropdown.Value and FlingDropdown.Value.Title then flingTarget = FlingDropdown.Value.Title end
@@ -603,7 +597,6 @@ local function refreshLpMurd()
             end
         end
     end
-    -- Update Yukio Kill All button visibility based on murderer status
     if nYukioKillAllBtn then nYukioKillAllBtn.Visible = isLpMurd end
 end
 
@@ -1017,83 +1010,6 @@ local function equipKnife(char, hum)
     return char:FindFirstChild("Knife")
 end
 
-local doThrowKnife
-doThrowKnife = function()
-    local char = lp.Character
-    if not char then return end
-    local myHRP = char:FindFirstChild("HumanoidRootPart")
-    if not myHRP then return end
-    local hum = char:FindFirstChildOfClass("Humanoid")
-    if not hum then warn("[Waguri] ThrowKnife: no Humanoid") return end
-    local knife = equipKnife(char, hum)
-    if not knife then warn("[Waguri] ThrowKnife: no Knife found") return end
-    local knifeEvents = knife:FindFirstChild("Events")
-    local throwRemote = knifeEvents and knifeEvents:FindFirstChild("KnifeThrown")
-    if not (throwRemote and throwRemote:IsA("RemoteEvent")) then
-        warn("[Waguri] ThrowKnife: KnifeThrown remote not found") return
-    end
-    local candidates = {}
-    for _, p in ipairs(Players:GetPlayers()) do
-        if p ~= lp and p.Character then
-            local hrp2 = p.Character:FindFirstChild("HumanoidRootPart")
-            if hrp2 then
-                local dist = (hrp2.Position - myHRP.Position).Magnitude
-                candidates[#candidates + 1] = { player = p, hrp = hrp2, dist = dist }
-            end
-        end
-    end
-    table.sort(candidates, function(a, b) return a.dist < b.dist end)
-    local nearest, nearestHRP = nil, nil
-    local CHECK_PARTS = { "Head", "Torso", "UpperTorso", "HumanoidRootPart", "Left Arm", "LeftUpperArm", "Right Arm", "RightUpperArm" }
-    rayParams.FilterDescendantsInstances = { char }
-    for _, c in ipairs(candidates) do
-        local pChar = c.player.Character
-        if not pChar then continue end
-        local visible = 0
-        for _, partName in ipairs(CHECK_PARTS) do
-            local part = pChar:FindFirstChild(partName)
-            if part and part:IsA("BasePart") then
-                local dir    = part.Position - myHRP.Position
-                local result = Workspace:Raycast(myHRP.Position, dir, rayParams)
-                if not result or result.Instance:IsDescendantOf(pChar) then
-                    visible = visible + 1
-                end
-            end
-        end
-        if visible > 0 then nearest = c.player nearestHRP = c.hrp break end
-    end
-    if not nearest and #candidates > 0 then
-        nearest    = candidates[1].player
-        nearestHRP = candidates[1].hrp
-    end
-    if not nearest then warn("[Waguri] ThrowKnife: no target found") return end
-    local kDt    = (nearestHRP.Position - myHRP.Position).Magnitude / getKnifeSpeed()
-    local aimPos = getPredPos(nearest, nearestHRP, myHRP, kDt)
-    local ok, err = pcall(function()
-        throwRemote:FireServer(CFrame.new(myHRP.Position, aimPos), CFrame.new(aimPos))
-    end)
-    if not ok then warn("[Waguri] ThrowKnife FireServer: " .. tostring(err)) end
-end
-
-local doGrabGun
-doGrabGun = function()
-    local char = lp.Character
-    local hrp  = char and char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-    local savedCFrame = hrp.CFrame
-    local gunDrop = nil
-    for _, desc in ipairs(Workspace:GetDescendants()) do
-        if desc.Name == "GunDrop" and desc:IsA("BasePart") then gunDrop = desc break end
-    end
-    if not gunDrop then warn("[Waguri] GrabGun: no GunDrop found") return end
-    local ok, err = pcall(function()
-        hrp.CFrame = CFrame.new(gunDrop.Position)
-        firetouchinterest(gunDrop, hrp, 0)
-        hrp.CFrame = savedCFrame
-    end)
-    if not ok then warn("[Waguri] GrabGun: " .. tostring(err)) end
-end
-
 local function equipGunIfNeeded()
     local myChar = lp.Character
     if not myChar then return end
@@ -1123,10 +1039,13 @@ local function doSingleShot()
     if not ok then warn("[Waguri] doSingleShot: " .. tostring(err)) end
 end
 
--- ========== YUKIO FUNCTIONS ==========
+-- ========== YUKIO BUTTON FUNCTIONS ==========
 local function yukioShoot()
     local myChar = lp.Character
-    if not myChar then return end
+    if not myChar then
+        WindUI:Notify({ Title = "Yukio Shoot", Content = "No character!", Duration = 2, Icon = "x" })
+        return
+    end
     local myHRP = myChar:FindFirstChild("HumanoidRootPart")
     if not myHRP then return end
     if not murderer then
@@ -1134,20 +1053,23 @@ local function yukioShoot()
         return
     end
     local aimPos = getAimPosition()
-    if not aimPos then return end
+    if not aimPos then
+        WindUI:Notify({ Title = "Yukio Shoot", Content = "Cannot get aim position!", Duration = 2, Icon = "x" })
+        return
+    end
     local remote = getShootRemote()
     if not remote then
         equipGunIfNeeded()
         remote = getShootRemote()
         if not remote then
-            WindUI:Notify({ Title = "Yukio Shoot", Content = "No gun found!", Duration = 2, Icon = "x" })
+            WindUI:Notify({ Title = "Yukio Shoot", Content = "No gun found! Use Get Gun first.", Duration = 2, Icon = "x" })
             return
         end
     end
     pcall(function()
         remote:FireServer(CFrame.new(myHRP.Position, aimPos), CFrame.new(aimPos))
     end)
-    WindUI:Notify({ Title = "Yukio Shoot", Content = "Shot fired at murderer!", Duration = 1, Icon = "target" })
+    WindUI:Notify({ Title = "Yukio Shoot", Content = "🔫 Shot fired!", Duration = 1, Icon = "target" })
 end
 
 local function yukioKillAll()
@@ -1160,10 +1082,16 @@ local function yukioKillAll()
     local hum = char:FindFirstChildOfClass("Humanoid")
     if not hum then return end
     local knife = equipKnife(char, hum)
-    if not knife then return end
+    if not knife then
+        WindUI:Notify({ Title = "Yukio Kill All", Content = "No knife found!", Duration = 2, Icon = "x" })
+        return
+    end
     local knifeEvents = knife:FindFirstChild("Events")
     local stab = knifeEvents and knifeEvents:FindFirstChild("KnifeStabbed")
-    if not stab then return end
+    if not stab then
+        WindUI:Notify({ Title = "Yukio Kill All", Content = "Stab remote not found!", Duration = 2, Icon = "x" })
+        return
+    end
     local myHRP = char:FindFirstChild("HumanoidRootPart")
     if not myHRP then return end
     for _, p in ipairs(Players:GetPlayers()) do
@@ -1175,7 +1103,7 @@ local function yukioKillAll()
         end
     end
     pcall(function() stab:FireServer() end)
-    WindUI:Notify({ Title = "Yukio Kill All", Content = "Killed all players!", Duration = 1, Icon = "sword" })
+    WindUI:Notify({ Title = "Yukio Kill All", Content = "🗡️ Killed all players!", Duration = 1, Icon = "sword" })
 end
 
 local function yukioGetGun()
@@ -1199,7 +1127,7 @@ local function yukioGetGun()
     task.wait(0.1)
     hrp.CFrame = savedCFrame
     equipGunIfNeeded()
-    WindUI:Notify({ Title = "Yukio Gun", Content = "Grabbed the gun!", Duration = 1, Icon = "target" })
+    WindUI:Notify({ Title = "Yukio Gun", Content = "🎯 Grabbed the gun!", Duration = 1, Icon = "target" })
 end
 
 local function SkidFling(target)
@@ -1383,35 +1311,6 @@ local function getPlayerOptions()
     return opts
 end
 
-local function doKillAll()
-    local char = lp.Character
-    if not char then return end
-    local hum = char:FindFirstChildOfClass("Humanoid")
-    if not hum then return end
-    local knife = equipKnife(char, hum)
-    if not knife then warn("[Waguri] KillAll: no Knife found") return end
-    local knifeEvents = knife:FindFirstChild("Events")
-    local stab = knifeEvents and knifeEvents:FindFirstChild("KnifeStabbed")
-    if not (stab and stab:IsA("RemoteEvent")) then
-        pcall(function() lp.Character:FindFirstChild("Knife").Events.KnifeStabbed:FireServer() end)
-        return
-    end
-    local myHRP = char:FindFirstChild("HumanoidRootPart")
-    if not myHRP then return end
-    for _, p in ipairs(Players:GetPlayers()) do
-        if p ~= lp and p.Character then
-            local hrp = p.Character:FindFirstChild("HumanoidRootPart")
-            if hrp then
-                pcall(function()
-                    hrp.CFrame = myHRP.CFrame + myHRP.CFrame.LookVector
-                end)
-            end
-        end
-    end
-    local ok, err = pcall(function() stab:FireServer() end)
-    if not ok then warn("[Waguri] KillAll FireServer: " .. tostring(err)) end
-end
-
 -- ── Home Tab: Seconds Life (Godmode) ─────────────────────────────────────────
 HomeTab:Paragraph({
     Title         = "Waguri is so tuff 67",
@@ -1461,12 +1360,11 @@ HomeTab:Toggle({
     end
 })
 
--- ── Home Tab: Touch Fling + Anti Fling (Fixed - Same as other script) ───────
+-- ── Home Tab: Touch Fling + Anti Fling ───────────────────────────────────────
 
 local touchFlingEnabled = false
 local antiFlingEnabled = false
 
--- Strong Fling Function (Copied & Adapted from the working script)
 local function SHubFling(TargetPlayer)
     local char = lp.Character
     local hum = char and char:FindFirstChildOfClass("Humanoid")
@@ -1482,7 +1380,6 @@ local function SHubFling(TargetPlayer)
 
     local OldPos = root.CFrame
 
-    -- Camera trick
     repeat task.wait()
         workspace.CurrentCamera.CameraSubject = THead or THumanoid
     until workspace.CurrentCamera.CameraSubject == THead or THumanoid
@@ -1525,7 +1422,6 @@ local function SHubFling(TargetPlayer)
     BV:Destroy()
     hum:SetStateEnabled(Enum.HumanoidStateType.Seated, true)
 
-    -- Return back
     workspace.CurrentCamera.CameraSubject = hum
     repeat
         root.CFrame = OldPos * CFrame.new(0, 0.5, 0)
@@ -1534,7 +1430,6 @@ local function SHubFling(TargetPlayer)
     until (root.Position - OldPos.Position).Magnitude < 25
 end
 
--- Touch Fling Toggle
 HomeTab:Toggle({
     Title    = "Touch Fling",
     Desc     = "Flings anyone who touches you",
@@ -1549,7 +1444,6 @@ HomeTab:Toggle({
     end
 })
 
--- Anti Fling Toggle
 HomeTab:Toggle({
     Title    = "Anti Fling",
     Desc     = "Disables collision on all other players so they can't fling you",
@@ -1572,7 +1466,6 @@ HomeTab:Toggle({
     end
 })
 
--- Touch Fling Logic
 RunService.Heartbeat:Connect(function()
     if not touchFlingEnabled then return end
     local char = lp.Character
@@ -1594,7 +1487,6 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
--- Anti Fling Loop
 task.spawn(function()
     while true do
         task.wait(0.1)
@@ -1668,7 +1560,7 @@ HomeTab:Button({
     end
 })
 
--- ── Toggles ───────────────────────────────────────────────────────────────────
+-- ── Main Tab Toggles ─────────────────────────────────────────────────────────
 local SilentAimToggle = MainTab:Toggle({
     Title    = "Silent Aim",
     Desc     = "Auto-aims and fires at the murderer on left click",
@@ -1682,45 +1574,23 @@ local SilentAimToggle = MainTab:Toggle({
 
 local ManualAimToggle = MainTab:Toggle({
     Title    = "Manual Aim",
-    Desc     = "Enable the Shoot Murd button",
+    Desc     = "Enable the Yukio Shoot button",
     Type     = "Checkbox",
     Value    = false,
     Callback = function(state)
         manualAimEnabled = state
-        if nShootBtn then nShootBtn.Visible = state end
         if nYukioShootBtn then nYukioShootBtn.Visible = state end
-        saveConfig()
-    end
-})
-
-local KillAllButton = MainTab:Button({
-    Title    = "Kill All",
-    Desc     = "Kills all player when lp is murd",
-    Callback = function()
-        doKillAll()
-    end
-})
-
-local ThrowKnifeToggle = MainTab:Toggle({
-    Title    = "Throw Knife",
-    Desc     = "Enable the Throw Knife button",
-    Type     = "Checkbox",
-    Value    = false,
-    Callback = function(state)
-        throwKnifeEnabled = state
-        if nThrowBtn then nThrowBtn.Visible = state end
         saveConfig()
     end
 })
 
 local GrabGunToggle = MainTab:Toggle({
     Title    = "Grab Gun",
-    Desc     = "Enable the Grab Gun button",
+    Desc     = "Enable the Yukio Get Gun button",
     Type     = "Checkbox",
     Value    = false,
     Callback = function(state)
         grabGunEnabled = state
-        if nGrabBtn then nGrabBtn.Visible = state end
         if nYukioGunBtn then nYukioGunBtn.Visible = state end
         saveConfig()
     end
@@ -1745,12 +1615,6 @@ local AutoGrabGunToggle = MainTab:Toggle({
     Value    = false,
     Callback = function(state)
         autoGrabGunEnabled = state
-        if state then
-            task.spawn(function()
-                task.wait(0.1)
-                doGrabGun()
-            end)
-        end
         saveConfig()
     end
 })
@@ -1766,667 +1630,6 @@ local FakeBombToggle = MainTab:Toggle({
     end
 })
 
-local fakeBombLoaded = false
-
-local FakeBombToggle = MainTab:Toggle({
-    Title = "Fake Bomb",
-    Desc = "Waguri Bomb Jump",
-    Type = "Checkbox",
-    Value = false,
-
-    Callback = function(state)
-
-        if state then
-
-            if fakeBombLoaded then
-                return
-            end
-
-            fakeBombLoaded = true
-
-            loadstring(game:HttpGet(
-                "https://raw.githubusercontent.com/waguri-mm2/Murder-mystery-2/refs/heads/main/Waguri-bomb-jump.lua"
-            ))()
-
-        else
-
-            fakeBombLoaded = false
-
-            local gui = game.Players.LocalPlayer.PlayerGui:FindFirstChild("BombJumpGUI")
-
-            if gui then
-                gui:Destroy()
-            end
-        end
-
-        saveConfig()
-    end
-})
-
--- ── Native Action Buttons (top-right, red, mobile-friendly) ───────────────────
-local invisNativeLbl = nil
-
-local function setInvisBtn(title)
-    if invisNativeLbl then invisNativeLbl.Text = title end
-end
-
-local function resetInvisBtn()
-    setInvisBtn("Invisible")
-end
-
--- GUI setup
-local nGui = Instance.new("ScreenGui")
-nGui.Name            = "Waguri_Btns"
-nGui.ResetOnSpawn    = false
-nGui.ZIndexBehavior  = Enum.ZIndexBehavior.Sibling
-nGui.IgnoreGuiInset  = true
-nGui.Parent          = getGuiParent()
-
-invisSnd = Instance.new("Sound")
-invisSnd.SoundId = INVIS_SOUND_ID
-invisSnd.Volume  = 0.5
-invisSnd.Parent  = nGui
-
-local nFrame = Instance.new("Frame")
-nFrame.Name                   = "BtnContainer"
-nFrame.BackgroundTransparency = 1
-nFrame.AnchorPoint            = Vector2.new(1, 0)
-nFrame.Position               = UDim2.new(1, -6, 0, 52)
-nFrame.Size                   = UDim2.new(0, 200, 1, 0)  -- Made wider for more buttons
-nFrame.Parent                 = nGui
-
---- 🧲 DRAGGABLE BUTTON CONTAINER
-
-local dragEnabled = true
-
-local dragging = false
-local dragStart
-local startPos
-
-nFrame.InputBegan:Connect(function(input)
-
-	if not dragEnabled then
-		return
-	end
-
-	if input.UserInputType == Enum.UserInputType.MouseButton1
-	or input.UserInputType == Enum.UserInputType.Touch then
-
-		dragging = true
-		dragStart = input.Position
-		startPos = nFrame.Position
-
-		input.Changed:Connect(function()
-			if input.UserInputState == Enum.UserInputState.End then
-				dragging = false
-			end
-		end)
-	end
-end)
-
-UserInputService.InputChanged:Connect(function(input)
-
-	if not dragEnabled then
-		return
-	end
-
-	if dragging and (
-		input.UserInputType == Enum.UserInputType.MouseMovement
-		or input.UserInputType == Enum.UserInputType.Touch
-	) then
-
-		local delta = input.Position - dragStart
-
-		nFrame.Position = UDim2.new(
-			startPos.X.Scale,
-			startPos.X.Offset + delta.X,
-			startPos.Y.Scale,
-			startPos.Y.Offset + delta.Y
-		)
-	end
-end)
-
--- 🔒 LOCK BUTTON
-
-local lockBtn = Instance.new("TextButton")
-lockBtn.Name = "DragLock"
-lockBtn.Size = UDim2.new(0, 42, 0, 42)
-lockBtn.Position = UDim2.new(1, -48, 0, -48)
-lockBtn.BackgroundColor3 = Color3.fromRGB(25,25,25)
-lockBtn.Text = "LOCK"
-lockBtn.TextSize = 11
-lockBtn.Font = Enum.Font.GothamBold
-lockBtn.TextColor3 = Color3.fromRGB(255,255,255)
-lockBtn.BorderSizePixel = 0
-lockBtn.ZIndex = 100
-lockBtn.Parent = nFrame
-
--- circle
-local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(1,0)
-corner.Parent = lockBtn
-
--- outline
-local stroke = Instance.new("UIStroke")
-stroke.Color = Color3.fromRGB(255,255,255)
-stroke.Thickness = 1.3
-stroke.Transparency = 0.4
-stroke.Parent = lockBtn
-
--- hover
-lockBtn.MouseEnter:Connect(function()
-	game:GetService("TweenService"):Create(
-		lockBtn,
-		TweenInfo.new(0.15),
-		{BackgroundColor3 = Color3.fromRGB(40,40,40)}
-	):Play()
-end)
-
-lockBtn.MouseLeave:Connect(function()
-	game:GetService("TweenService"):Create(
-		lockBtn,
-		TweenInfo.new(0.15),
-		{BackgroundColor3 = Color3.fromRGB(25,25,25)}
-	):Play()
-end)
-
--- toggle
-lockBtn.MouseButton1Click:Connect(function()
-
-	dragEnabled = not dragEnabled
-
-	if dragEnabled then
-		lockBtn.Text = "LOCK"
-		stroke.Color = Color3.fromRGB(255,255,255)
-	else
-		lockBtn.Text = "UNLOCK"
-		stroke.Color = Color3.fromRGB(255,80,80)
-	end
-
-end)
-
-local nLayout = Instance.new("UIListLayout")
-nLayout.SortOrder           = Enum.SortOrder.LayoutOrder
-nLayout.Padding             = UDim.new(0, 4)
-nLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
-nLayout.VerticalAlignment   = Enum.VerticalAlignment.Top
-nLayout.Parent              = nFrame
-
-local BTN_W          = 160
-local BTN_H          = 45
-local PARTICLE_COUNT = 0
-
-local function makeNativeBtn(text, cb)
-    local btn = Instance.new("TextButton")
-    btn.Size             = UDim2.new(0, BTN_W, 0, BTN_H)
-    btn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    btn.BackgroundTransparency = 0.8
-    btn.Text             = ""
-    btn.AutoButtonColor  = false
-    btn.BorderSizePixel  = 0
-    btn.Parent           = nFrame
-
-    local corner = Instance.new("UICorner", btn)
-    corner.CornerRadius = UDim.new(0, 8)
-
-    local stroke = Instance.new("UIStroke", btn)
-    stroke.Color        = Color3.fromRGB(255, 0, 0)
-    stroke.Thickness    = 1.5
-    stroke.Transparency = 0
-    stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-
-    -- Inner glow frame (simulates bloom behind stroke)
-    local glow = Instance.new("Frame", btn)
-    glow.Size                   = UDim2.new(1, 0, 1, 0)
-    glow.BackgroundTransparency = 1
-    glow.ZIndex                 = 0
-    Instance.new("UICorner", glow).CornerRadius = UDim.new(0, 8)
-    local glowStroke = Instance.new("UIStroke", glow)
-    glowStroke.Thickness    = 4
-    glowStroke.Transparency = 0.72
-    glowStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-
-    -- Scale instance for hover/press
-    local sc = Instance.new("UIScale", btn)
-    sc.Scale = 1
-
-    -- Clip frame for particles
-    local clip = Instance.new("Frame", btn)
-    clip.Size                   = UDim2.new(1, 0, 1, 0)
-    clip.BackgroundTransparency = 1
-    clip.ClipsDescendants       = true
-    clip.ZIndex                 = 1
-    Instance.new("UICorner", clip).CornerRadius = UDim.new(0, 8)
-
-    -- Particles
-    local pData = {}
-    local rng   = Random.new()
-    for i = 1, PARTICLE_COUNT do
-        local sz = rng:NextInteger(2, 5)
-        local f  = Instance.new("Frame", clip)
-        f.Size                   = UDim2.new(0, sz, 0, sz)
-        f.BorderSizePixel        = 0
-        f.BackgroundColor3       = Color3.fromHSV(i / PARTICLE_COUNT, 1, 1)
-        f.BackgroundTransparency = rng:NextNumber(0, 0.25)
-        f.ZIndex                 = 1
-        Instance.new("UICorner", f).CornerRadius = UDim.new(1, 0)
-        local px = rng:NextInteger(0, BTN_W - sz)
-        local py = rng:NextInteger(0, BTN_H - sz)
-        f.Position = UDim2.new(0, px, 0, py)
-        pData[i] = {
-            f   = f,
-            x   = px, y   = py,
-            vx  = rng:NextNumber(-20, 20),
-            vy  = rng:NextNumber(-20, 20),
-            hue = i / PARTICLE_COUNT,
-            dh  = rng:NextNumber(0.08, 0.25) * (rng:NextNumber() < 0.5 and 1 or -1),
-            sz  = sz,
-        }
-    end
-
-    local lbl = Instance.new("TextLabel", btn)
-    lbl.Size                   = UDim2.new(1, -8, 1, 0)
-    lbl.Position               = UDim2.new(0, 4, 0, 0)
-    lbl.BackgroundTransparency = 1
-    lbl.Text                   = text
-    lbl.TextColor3             = Color3.fromRGB(255, 255, 255)
-    lbl.TextSize               = 13
-    lbl.Font                   = Enum.Font.GothamBold
-    lbl.TextTruncate           = Enum.TextTruncate.AtEnd
-    lbl.TextXAlignment         = Enum.TextXAlignment.Center
-    lbl.ZIndex                 = 3
-
-    -- Animation state
-    local strokeHue    = 0
-    local clickX, clickY  = 0, 0
-    local clickActive     = false
-    local clickT          = 0
-    local scattered       = false
-    local isHovered       = false
-    local GATHER_T        = 0.22
-    local SCATTER_T       = 0.45
-    local MAX_FLOAT_SPEED = 38
-    local HUE_SPEED       = 0.55  -- full cycle per second
-
-    -- Hover tweens
-    local tweenHoverIn  = TweenService:Create(sc,
-        TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-        { Scale = 1.05 })
-    local tweenHoverOut = TweenService:Create(sc,
-        TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-        { Scale = 1.0 })
-    local tweenPressIn  = TweenService:Create(sc,
-        TweenInfo.new(0.07, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-        { Scale = 0.93 })
-    local tweenPressOut = TweenService:Create(sc,
-        TweenInfo.new(0.14, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
-        { Scale = isHovered and 1.05 or 1.0 })
-
-    btn.MouseEnter:Connect(function()
-        isHovered = true
-        tweenHoverIn:Play()
-        TweenService:Create(stroke,
-            TweenInfo.new(0.15, Enum.EasingStyle.Quad),
-            { Thickness = 2.2 }):Play()
-        TweenService:Create(glowStroke,
-            TweenInfo.new(0.15, Enum.EasingStyle.Quad),
-            { Transparency = 0.45 }):Play()
-    end)
-
-    btn.MouseLeave:Connect(function()
-        isHovered = false
-        tweenHoverOut:Play()
-        TweenService:Create(stroke,
-            TweenInfo.new(0.18, Enum.EasingStyle.Quad),
-            { Thickness = 1.5 }):Play()
-        TweenService:Create(glowStroke,
-            TweenInfo.new(0.18, Enum.EasingStyle.Quad),
-            { Transparency = 0.72 }):Play()
-    end)
-
-    btn.InputBegan:Connect(function(inp)
-        if inp.UserInputType ~= Enum.UserInputType.MouseButton1
-        and inp.UserInputType ~= Enum.UserInputType.Touch then return end
-        tweenPressIn:Play()
-        local ap = btn.AbsolutePosition
-        clickX      = inp.Position.X - ap.X
-        clickY      = inp.Position.Y - ap.Y
-        clickActive = true
-        clickT      = tick()
-        scattered   = false
-    end)
-
-    btn.InputEnded:Connect(function(inp)
-        if inp.UserInputType ~= Enum.UserInputType.MouseButton1
-        and inp.UserInputType ~= Enum.UserInputType.Touch then return end
-        TweenService:Create(sc,
-            TweenInfo.new(0.14, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
-            { Scale = isHovered and 1.05 or 1.0 }):Play()
-    end)
-
-    local conn
-    conn = RunService.Heartbeat:Connect(function(dt)
-        if not btn.Parent then conn:Disconnect() return end
-
-        -- RGB stroke cycle
-        strokeHue = (strokeHue + HUE_SPEED * dt) % 1
-        local rgb = Color3.fromHSV(strokeHue, 1, 1)
-        stroke.Color     = rgb
-        glowStroke.Color = rgb
-
-        local elapsed = clickActive and (tick() - clickT) or math.huge
-        if clickActive and elapsed >= GATHER_T + SCATTER_T then
-            clickActive = false
-        end
-
-        for _, pd in ipairs(pData) do
-            pd.hue = (pd.hue + pd.dh * dt) % 1
-            pd.f.BackgroundColor3 = Color3.fromHSV(pd.hue, 1, 1)
-
-            if clickActive and elapsed < GATHER_T then
-                pd.x = pd.x + (clickX - pd.x) * (9 * dt)
-                pd.y = pd.y + (clickY - pd.y) * (9 * dt)
-
-            elseif clickActive and elapsed >= GATHER_T then
-                if not scattered then
-                    scattered = true
-                    for _, pd2 in ipairs(pData) do
-                        local a = rng:NextNumber(0, math.pi * 2)
-                        local s = rng:NextNumber(90, 220)
-                        pd2.vx = math.cos(a) * s
-                        pd2.vy = math.sin(a) * s
-                    end
-                end
-                pd.x  = pd.x + pd.vx * dt
-                pd.y  = pd.y + pd.vy * dt
-                pd.vx = pd.vx * (1 - dt * 4)
-                pd.vy = pd.vy * (1 - dt * 4)
-
-            else
-                pd.x = pd.x + pd.vx * dt
-                pd.y = pd.y + pd.vy * dt
-                if pd.x < 0 then
-                    pd.vx = math.abs(pd.vx) pd.x = 0
-                elseif pd.x > BTN_W - pd.sz then
-                    pd.vx = -math.abs(pd.vx) pd.x = BTN_W - pd.sz
-                end
-                if pd.y < 0 then
-                    pd.vy = math.abs(pd.vy) pd.y = 0
-                elseif pd.y > BTN_H - pd.sz then
-                    pd.vy = -math.abs(pd.vy) pd.y = BTN_H - pd.sz
-                end
-                if rng:NextNumber() < 0.015 then
-                    pd.vx = pd.vx + rng:NextNumber(-8, 8)
-                    pd.vy = pd.vy + rng:NextNumber(-8, 8)
-                    local spd = math.sqrt(pd.vx * pd.vx + pd.vy * pd.vy)
-                    if spd > MAX_FLOAT_SPEED then
-                        local inv = MAX_FLOAT_SPEED / spd
-                        pd.vx = pd.vx * inv
-                        pd.vy = pd.vy * inv
-                    end
-                end
-            end
-
-            pd.f.Position = UDim2.new(0, pd.x, 0, pd.y)
-        end
-    end)
-
-    local firing = false
-    local function onRelease()
-        if firing then return end
-        firing = true
-        task.spawn(cb)
-        task.delay(0.5, function() firing = false end)
-    end
-
-    btn.MouseButton1Up:Connect(onRelease)
-    btn.TouchTap:Connect(onRelease)
-
-    return btn, lbl
-end
-
--- Shoot Murd (Original)
-nShootBtn = (function()
-    local btn = makeNativeBtn("Shoot Murd", function()
-        local ok, err = pcall(doSingleShot)
-        if not ok then warn("[Waguri] ShootMurd: " .. tostring(err)) end
-    end)
-    btn.Visible = false
-    return btn
-end)()
-
--- Throw Knife
-nThrowBtn = (function()
-    local btn = makeNativeBtn("Throw Knife", function()
-        if not isLpMurd then
-            WindUI:Notify({ Title = "Throw Knife", Content = "You are not the Murderer.", Duration = 2, Icon = "x" })
-            return
-        end
-        local ok, err = pcall(doThrowKnife)
-        if not ok then warn("[Waguri] ThrowKnife: " .. tostring(err)) end
-    end)
-    btn.Visible = false
-    return btn
-end)()
-
--- Grab Gun (Original)
-nGrabBtn = (function()
-    local btn = makeNativeBtn("Grab Gun", function()
-        local ok, err = pcall(doGrabGun)
-        if not ok then warn("[Waguri] GrabGun: " .. tostring(err)) end
-    end)
-    btn.Visible = false
-    return btn
-end)()
-
--- ========== YUKIO BUTTONS (Anime Style) ==========
--- Yukio Shoot Murderer Button
-nYukioShootBtn = (function()
-    local btn = makeNativeBtn("🔫 YUKIO SHOOT", function()
-        yukioShoot()
-    end)
-    btn.Visible = false
-    return btn
-end)()
-
--- Yukio Kill All Button
-nYukioKillAllBtn = (function()
-    local btn = makeNativeBtn("🗡️ YUKIO KILL ALL", function()
-        yukioKillAll()
-    end)
-    btn.Visible = false
-    return btn
-end)()
-
--- Yukio Get Gun Button
-nYukioGunBtn = (function()
-    local btn = makeNativeBtn("🎯 YUKIO GET GUN", function()
-        yukioGetGun()
-    end)
-    btn.Visible = false
-    return btn
-end)()
-
-local function setCharTransparency(char, t)
-    for _, v in ipairs(char:GetDescendants()) do
-        if v:IsA("BasePart") or v:IsA("Decal") then
-            v.Transparency = t
-        end
-    end
-end
-
-local function doInvisToggle()
-    if invisActive then
-        WindUI:Notify({ Title = "Invisible", Content = "Invisible is currently in action, Please wait!.", Duration = 3, Icon = "x" })
-        return
-    end
-    invisActive = true
-    if not invisibleEnabled then
-        WindUI:Notify({ Title = "Invisible", Content = "Enable Invisible toggle first.", Duration = 3, Icon = "x" })
-        return
-    end
-    local char = lp.Character
-    if not char then
-        WindUI:Notify({ Title = "Invisible", Content = "No character found.", Duration = 3, Icon = "x" })
-        return
-    end
-    if invisSnd then invisSnd:Play() end
-
-    if not isInvisible then
-        local hrp = char:FindFirstChild("HumanoidRootPart")
-        if not hrp then return end
-        local savedCF = hrp.CFrame
-        local torso   = char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso")
-        if not torso then return end
-
-        local hidePos = Vector3.new(0, 10000, 0)
-
-        char:MoveTo(hidePos)
-        task.wait(0.15)
-
-        local seat = Instance.new("Seat")
-        seat.Name        = "Waguri_InvisChair"
-        seat.Anchored    = false
-        seat.CanCollide  = false
-        seat.Transparency = 1
-        seat.Position    = hidePos
-        seat.Parent      = workspace
-
-        local weld  = Instance.new("Weld")
-        weld.Part0  = seat
-        weld.Part1  = torso
-        weld.Parent = seat
-
-        task.wait()
-        seat.CFrame = savedCF
-        invisSeat   = seat
-
-        setCharTransparency(char, 0.6)
-
-        isInvisible = true
-        setInvisBtn("[ON] Invisible")
-    else
-        if invisSeat and invisSeat.Parent then invisSeat:Destroy() end
-        local stray = workspace:FindFirstChild("Waguri_InvisChair")
-        if stray then stray:Destroy() end
-        local hrp = workspace[lp.Name]:FindFirstChild("HumanoidRootPart")
-        invisSeat = nil
-
-        setCharTransparency(char, 0)
-        local hrp = char:FindFirstChild("HumanoidRootPart")
-        if hrp then hrp.Transparency = 0 end
-
-        isInvisible = false
-        resetInvisBtn()
-    end
-    invisActive = false
-end
-
-nInvisBtn, invisNativeLbl = makeNativeBtn("Invisible", doInvisToggle)
-nInvisBtn.Visible = false
-
-local function applyWalkSpeed(value)
-    local n = tonumber(value)
-    if not n then return end
-    n = math.clamp(n, 0, 100)
-    currentSpeed = n
-    updateLockedStat("WalkSpeed", n)
-end
-
-local function applyJumpPower(value)
-    local n = tonumber(value)
-    if not n then return end
-    n = math.clamp(n, 0, 200)
-    currentJump       = n
-    originalJumpPower = n
-    updateLockedStat("JumpPower", n)
-end
-
--- ── Players Tab ───────────────────────────────────────────────────────────────
-local WalkSpeedInput = PlayersTab:Input({
-    Title       = "Walk Speed",
-    Desc        = "Enter a value between 0 and 100 then press Enter",
-    Icon        = "footprints",
-    Placeholder = "Default: 17",
-    Numeric     = true,
-    Callback    = function(value)
-        local n = tonumber(value)
-        if not n then
-            WindUI:Notify({ Title = "Walk Speed", Content = "Invalid value.", Duration = 3, Icon = "x" })
-            return
-        end
-        n = math.clamp(n, 0, 100)
-        applyWalkSpeed(tostring(n))
-        WindUI:Notify({ Title = "Walk Speed", Content = "Set to " .. n, Duration = 2, Icon = "check" })
-        saveConfig()
-    end
-})
-
-local JumpPowerInput = PlayersTab:Input({
-    Title       = "Jump Power",
-    Desc        = "Enter a value between 0 and 200 then press Enter",
-    Icon        = "arrow-up",
-    Placeholder = "Default: 50",
-    Numeric     = true,
-    Callback    = function(value)
-        local n = tonumber(value)
-        if not n then
-            WindUI:Notify({ Title = "Jump Power", Content = "Invalid value.", Duration = 3, Icon = "x" })
-            return
-        end
-        n = math.clamp(n, 0, 200)
-        applyJumpPower(tostring(n))
-        WindUI:Notify({ Title = "Jump Power", Content = "Set to " .. n, Duration = 2, Icon = "check" })
-        saveConfig()
-    end
-})
-
-local TpDropdown = PlayersTab:Dropdown({
-    Title    = "Teleport Target",
-    Desc     = "Select a player to teleport to",
-    Values   = getPlayerOptions(),
-    Value    = "",
-    Callback = function(option)
-        tpTarget = option.Title
-    end
-})
-
-PlayersTab:Button({
-    Title    = "Teleport",
-    Desc     = "Teleport to the selected player",
-    Callback = function()
-        if tpTarget == "" then
-            WindUI:Notify({ Title = "Teleport", Content = "Select a player first.", Duration = 3, Icon = "x" })
-            return
-        end
-        local ok, err = pcall(doTp, tpTarget)
-        if not ok then warn("[Waguri] Tp: " .. tostring(err)) end
-    end
-})
-
-local FlingDropdown = PlayersTab:Dropdown({
-    Title    = "Fling Target",
-    Desc     = "Select a player to fling",
-    Values   = getPlayerOptions(),
-    Value    = "",
-    Callback = function(option)
-        flingTarget = option.Title
-    end
-})
-
-PlayersTab:Button({
-    Title    = "Fling",
-    Desc     = "Fling the selected player",
-    Callback = function()
-        if flingTarget == "" then
-            WindUI:Notify({ Title = "Fling", Content = "Select a player first.", Duration = 3, Icon = "x" })
-            return
-        end
-        local ok, err = pcall(doFling, flingTarget)
-        if not ok then warn("[Waguri] Fling: " .. tostring(err)) end
-    end
-})
-
 local InfiniteJumpToggle = PlayersTab:Toggle({
     Title    = "Infinite Jump",
     Desc     = "Jump infinitely in mid-air",
@@ -2439,7 +1642,7 @@ local InfiniteJumpToggle = PlayersTab:Toggle({
     end
 })
 
--- ── Visuals Tab ───────────────────────────────────────────────────────────────
+-- ── Visuals Tab ──────────────────────────────────────────────────────────────
 local MurderEspToggle = VisualsTab:Toggle({
     Title    = "Murder ESP",
     Desc     = "Show ESP for the Murderer",
@@ -2515,7 +1718,31 @@ local InnocentEspToggle = VisualsTab:Toggle({
     end
 })
 
--- ── Role ESP (via RemoteFunction) ─────────────────────────────────────────────
+local GunEspToggle = VisualsTab:Toggle({
+    Title    = "Gun ESP",
+    Desc     = "Show ESP on the dropped gun",
+    Icon     = "eye",
+    Type     = "Checkbox",
+    Value    = true,
+    Callback = function(state)
+        espGun = state
+        if not state then
+            for _, bb in pairs(gunDropHighlights) do
+                if bb and bb.Parent then bb:Destroy() end
+            end
+            gunDropHighlights = {}
+        else
+            for _, desc in ipairs(Workspace:GetDescendants()) do
+                if desc.Name == "GunDrop" and desc:IsA("BasePart") then
+                    attachGunDropHighlight(desc)
+                end
+            end
+        end
+        saveConfig()
+    end
+})
+
+-- ── Role ESP ─────────────────────────────────────────────────────────────────
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local LocalPlayer = Players.LocalPlayer
 
@@ -2638,73 +1865,31 @@ VisualsTab:Toggle({
     end
 })
 
-local GunEspToggle = VisualsTab:Toggle({
-    Title    = "Gun ESP",
-    Desc     = "Show ESP on the dropped gun",
-    Icon     = "eye",
-    Type     = "Checkbox",
-    Value    = true,
-    Callback = function(state)
-        espGun = state
-        if not state then
-            for _, bb in pairs(gunDropHighlights) do
-                if bb and bb.Parent then bb:Destroy() end
-            end
-            gunDropHighlights = {}
-        else
-            for _, desc in ipairs(Workspace:GetDescendants()) do
-                if desc.Name == "GunDrop" and desc:IsA("BasePart") then
-                    attachGunDropHighlight(desc)
-                end
-            end
-        end
-        saveConfig()
-    end
-})
-
--- ── Auto Farm Tab ─────────────────────────────────────────────────────────────
-
+-- ── Auto Farm Tab ────────────────────────────────────────────────────────────
 AutoFarmTab:Paragraph({
     Title         = "Auto Farm",
     Desc          = "Press the button below to load autofarm.",
     Color         = "Green",
     Thumbnail     = "https://www.roblox.com/asset-thumbnail/image?assetId=80648874729441&width=420&height=420&format=png",
     ThumbnailSize = 140,
-
     Buttons = {
         {
             Icon  = "play",
             Title = "Start Auto Farm",
-
             Callback = function()
-
-                WindUI:Notify({
-                    Title = "Auto Farm",
-                    Content = "Loading autofarm...",
-                    Duration = 3,
-                    Icon = "loader"
-                })
-
-                loadstring(game:HttpGet(
-                    "https://pastefy.app/pBWtDYvc/raw",
-                    true
-                ))()
-
+                WindUI:Notify({ Title = "Auto Farm", Content = "Loading autofarm...", Duration = 3, Icon = "loader" })
+                loadstring(game:HttpGet("https://pastefy.app/pBWtDYvc/raw", true))()
             end,
         }
     }
 })
 
--- ── Misc Tab ──────────────────────────────────────────────────────────────────
-
+-- ── Misc Tab ─────────────────────────────────────────────────────────────────
 local TeleportService = game:GetService("TeleportService")
 local HttpService     = game:GetService("HttpService")
 
 local function getServers(cursor)
-    local url = string.format(
-        "https://games.roblox.com/v1/games/%d/servers/Public?sortOrder=Asc&limit=100",
-        game.PlaceId
-    )
+    local url = string.format("https://games.roblox.com/v1/games/%d/servers/Public?sortOrder=Asc&limit=100", game.PlaceId)
     if cursor then url = url .. "&cursor=" .. cursor end
     local ok, res = pcall(function() return game:HttpGet(url) end)
     return ok and HttpService:JSONDecode(res) or nil
@@ -2790,19 +1975,10 @@ task.spawn(function()
     end
 end)
 
-MiscTab:Button({
-    Title    = "Hop Small Server",
-    Desc     = "Teleport to the server with the least players",
-    Callback = hopToSmallest,
-})
+MiscTab:Button({ Title = "Hop Small Server", Desc = "Teleport to the server with the least players", Callback = hopToSmallest })
+MiscTab:Button({ Title = "Server Hop", Desc = "Teleport to a random available server", Callback = hopToRandom })
 
-MiscTab:Button({
-    Title    = "Server Hop",
-    Desc     = "Teleport to a random available server",
-    Callback = hopToRandom,
-})
-
--- ── Credits Tab ───────────────────────────────────────────────────────────────
+-- ── Credits Tab ──────────────────────────────────────────────────────────────
 CreditsTab:Paragraph({
     Title         = "Waguri | Official",
     Desc          = "Made by waguri def not lying:<",
@@ -2821,25 +1997,17 @@ CreditsTab:Paragraph({
     }
 })
 
--- ── Settings Tab ──────────────────────────────────────────────────────────────
-
+-- ── Settings Tab ─────────────────────────────────────────────────────────────
 local ThemeDropdown = SettingsTab:Dropdown({
     Title  = "Theme Selector",
     Values = {
-        { Title = "Dark",            Icon = "moon"           },
-        { Title = "Light",           Icon = "sun"            },
-        { Title = "Purple Dream",    Icon = "sparkles"       },
-        { Title = "Ocean Blue",      Icon = "waves"          },
-        { Title = "Forest Green",    Icon = "tree-deciduous" },
-        { Title = "Crimson Red",     Icon = "flame"          },
-        { Title = "Sunset Orange",   Icon = "sunset"         },
-        { Title = "Midnight Purple", Icon = "moon-star"      },
-        { Title = "Cyan Glow",       Icon = "zap"            },
-        { Title = "Rose Pink",       Icon = "heart"          },
-        { Title = "Golden Hour",     Icon = "sun"            },
-        { Title = "Neon Green",      Icon = "zap-off"        },
-        { Title = "Electric Blue",   Icon = "sparkle"        },
-        { Title = "Custom",          Icon = "palette"        },
+        { Title = "Dark", Icon = "moon" }, { Title = "Light", Icon = "sun" },
+        { Title = "Purple Dream", Icon = "sparkles" }, { Title = "Ocean Blue", Icon = "waves" },
+        { Title = "Forest Green", Icon = "tree-deciduous" }, { Title = "Crimson Red", Icon = "flame" },
+        { Title = "Sunset Orange", Icon = "sunset" }, { Title = "Midnight Purple", Icon = "moon-star" },
+        { Title = "Cyan Glow", Icon = "zap" }, { Title = "Rose Pink", Icon = "heart" },
+        { Title = "Golden Hour", Icon = "sun" }, { Title = "Neon Green", Icon = "zap-off" },
+        { Title = "Electric Blue", Icon = "sparkle" }, { Title = "Custom", Icon = "palette" },
     },
     Value    = "Dark",
     Callback = function(option) WindUI:SetTheme(option.Title) saveConfig() end
@@ -2851,51 +2019,345 @@ local ThemeColor = SettingsTab:Colorpicker({
     Default  = Color3.fromRGB(255, 15, 123),
     Callback = function(color)
         WindUI:AddTheme({
-            Name        = "Custom",
-            Accent      = color,
-            Dialog      = Color3.fromHex("#161616"),
-            Outline     = color,
-            Text        = Color3.fromHex("#FFFFFF"),
-            Placeholder = Color3.fromHex("#7a7a7a"),
-            Background  = Color3.fromHex("#101010"),
-            Button      = Color3.fromHex("#52525b"),
-            Icon        = color,
+            Name = "Custom", Accent = color, Dialog = Color3.fromHex("#161616"), Outline = color,
+            Text = Color3.fromHex("#FFFFFF"), Placeholder = Color3.fromHex("#7a7a7a"),
+            Background = Color3.fromHex("#101010"), Button = Color3.fromHex("#52525b"), Icon = color,
         })
         WindUI:SetTheme("Custom")
     end
 })
 
+-- ── Players Tab ──────────────────────────────────────────────────────────────
+local WalkSpeedInput = PlayersTab:Input({
+    Title = "Walk Speed", Desc = "Enter a value between 0 and 100", Icon = "footprints", Placeholder = "Default: 17", Numeric = true,
+    Callback = function(value)
+        local n = tonumber(value)
+        if not n then return end
+        n = math.clamp(n, 0, 100)
+        applyWalkSpeed(tostring(n))
+        WindUI:Notify({ Title = "Walk Speed", Content = "Set to " .. n, Duration = 2, Icon = "check" })
+        saveConfig()
+    end
+})
+
+local JumpPowerInput = PlayersTab:Input({
+    Title = "Jump Power", Desc = "Enter a value between 0 and 200", Icon = "arrow-up", Placeholder = "Default: 50", Numeric = true,
+    Callback = function(value)
+        local n = tonumber(value)
+        if not n then return end
+        n = math.clamp(n, 0, 200)
+        applyJumpPower(tostring(n))
+        WindUI:Notify({ Title = "Jump Power", Content = "Set to " .. n, Duration = 2, Icon = "check" })
+        saveConfig()
+    end
+})
+
+local function applyWalkSpeed(value)
+    local n = tonumber(value)
+    if not n then return end
+    n = math.clamp(n, 0, 100)
+    currentSpeed = n
+    updateLockedStat("WalkSpeed", n)
+end
+
+local function applyJumpPower(value)
+    local n = tonumber(value)
+    if not n then return end
+    n = math.clamp(n, 0, 200)
+    currentJump = n
+    originalJumpPower = n
+    updateLockedStat("JumpPower", n)
+end
+
+local TpDropdown = PlayersTab:Dropdown({ Title = "Teleport Target", Values = getPlayerOptions(), Value = "", Callback = function(option) tpTarget = option.Title end })
+PlayersTab:Button({ Title = "Teleport", Callback = function()
+    if tpTarget == "" then WindUI:Notify({ Title = "Teleport", Content = "Select a player first.", Duration = 2, Icon = "x" }) return end
+    doTp(tpTarget)
+end })
+
+local FlingDropdown = PlayersTab:Dropdown({ Title = "Fling Target", Values = getPlayerOptions(), Value = "", Callback = function(option) flingTarget = option.Title end })
+PlayersTab:Button({ Title = "Fling", Callback = function()
+    if flingTarget == "" then WindUI:Notify({ Title = "Fling", Content = "Select a player first.", Duration = 2, Icon = "x" }) return end
+    doFling(flingTarget)
+end })
+
+-- ── BUTTON CONTAINER (WAGURI STYLE) ──────────────────────────────────────────
+local nGui = Instance.new("ScreenGui")
+nGui.Name            = "Waguri_Btns"
+nGui.ResetOnSpawn    = false
+nGui.ZIndexBehavior  = Enum.ZIndexBehavior.Sibling
+nGui.IgnoreGuiInset  = true
+nGui.Parent          = getGuiParent()
+
+invisSnd = Instance.new("Sound")
+invisSnd.SoundId = INVIS_SOUND_ID
+invisSnd.Volume  = 0.5
+invisSnd.Parent  = nGui
+
+local nFrame = Instance.new("Frame")
+nFrame.Name                   = "BtnContainer"
+nFrame.BackgroundTransparency = 1
+nFrame.AnchorPoint            = Vector2.new(1, 0)
+nFrame.Position               = UDim2.new(1, -6, 0, 52)
+nFrame.Size                   = UDim2.new(0, 200, 1, 0)
+nFrame.Parent                 = nGui
+
+local dragEnabled = true
+local dragging = false
+local dragStart, startPos
+
+nFrame.InputBegan:Connect(function(input)
+    if not dragEnabled then return end
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = nFrame.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+UIS.InputChanged:Connect(function(input)
+    if not dragEnabled then return end
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - dragStart
+        nFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
+local lockBtn = Instance.new("TextButton")
+lockBtn.Name = "DragLock"
+lockBtn.Size = UDim2.new(0, 42, 0, 42)
+lockBtn.Position = UDim2.new(1, -48, 0, -48)
+lockBtn.BackgroundColor3 = Color3.fromRGB(25,25,25)
+lockBtn.Text = "LOCK"
+lockBtn.TextSize = 11
+lockBtn.Font = Enum.Font.GothamBold
+lockBtn.TextColor3 = Color3.fromRGB(255,255,255)
+lockBtn.BorderSizePixel = 0
+lockBtn.ZIndex = 100
+lockBtn.Parent = nFrame
+
+local lockCorner = Instance.new("UICorner")
+lockCorner.CornerRadius = UDim.new(1,0)
+lockCorner.Parent = lockBtn
+
+local lockStroke = Instance.new("UIStroke")
+lockStroke.Color = Color3.fromRGB(255,255,255)
+lockStroke.Thickness = 1.3
+lockStroke.Transparency = 0.4
+lockStroke.Parent = lockBtn
+
+lockBtn.MouseEnter:Connect(function()
+    TweenService:Create(lockBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(40,40,40)}):Play()
+end)
+lockBtn.MouseLeave:Connect(function()
+    TweenService:Create(lockBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(25,25,25)}):Play()
+end)
+lockBtn.MouseButton1Click:Connect(function()
+    dragEnabled = not dragEnabled
+    if dragEnabled then
+        lockBtn.Text = "LOCK"
+        lockStroke.Color = Color3.fromRGB(255,255,255)
+    else
+        lockBtn.Text = "UNLOCK"
+        lockStroke.Color = Color3.fromRGB(255,80,80)
+    end
+end)
+
+local nLayout = Instance.new("UIListLayout")
+nLayout.SortOrder = Enum.SortOrder.LayoutOrder
+nLayout.Padding = UDim.new(0, 4)
+nLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
+nLayout.VerticalAlignment = Enum.VerticalAlignment.Top
+nLayout.Parent = nFrame
+
+local BTN_W = 160
+local BTN_H = 45
+
+local function makeYukioBtn(text, cb)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0, BTN_W, 0, BTN_H)
+    btn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    btn.BackgroundTransparency = 0.8
+    btn.Text = ""
+    btn.AutoButtonColor = false
+    btn.BorderSizePixel = 0
+    btn.Parent = nFrame
+
+    local btnCorner = Instance.new("UICorner", btn)
+    btnCorner.CornerRadius = UDim.new(0, 8)
+
+    local btnStroke = Instance.new("UIStroke", btn)
+    btnStroke.Color = Color3.fromRGB(255, 0, 0)
+    btnStroke.Thickness = 1.5
+    btnStroke.Transparency = 0
+
+    local glow = Instance.new("Frame", btn)
+    glow.Size = UDim2.new(1, 0, 1, 0)
+    glow.BackgroundTransparency = 1
+    Instance.new("UICorner", glow).CornerRadius = UDim.new(0, 8)
+    local glowStroke = Instance.new("UIStroke", glow)
+    glowStroke.Thickness = 4
+    glowStroke.Transparency = 0.72
+
+    local sc = Instance.new("UIScale", btn)
+    sc.Scale = 1
+
+    local lbl = Instance.new("TextLabel", btn)
+    lbl.Size = UDim2.new(1, -8, 1, 0)
+    lbl.Position = UDim2.new(0, 4, 0, 0)
+    lbl.BackgroundTransparency = 1
+    lbl.Text = text
+    lbl.TextColor3 = Color3.fromRGB(255, 255, 255)
+    lbl.TextSize = 13
+    lbl.Font = Enum.Font.GothamBold
+    lbl.TextXAlignment = Enum.TextXAlignment.Center
+    lbl.ZIndex = 3
+
+    local strokeHue = 0
+    RunService.Heartbeat:Connect(function(dt)
+        strokeHue = (strokeHue + 0.55 * dt) % 1
+        local rgb = Color3.fromHSV(strokeHue, 1, 1)
+        btnStroke.Color = rgb
+        glowStroke.Color = rgb
+    end)
+
+    local tweenHoverIn = TweenService:Create(sc, TweenInfo.new(0.15), { Scale = 1.05 })
+    local tweenHoverOut = TweenService:Create(sc, TweenInfo.new(0.18), { Scale = 1.0 })
+
+    btn.MouseEnter:Connect(function() tweenHoverIn:Play() end)
+    btn.MouseLeave:Connect(function() tweenHoverOut:Play() end)
+
+    local firing = false
+    btn.MouseButton1Click:Connect(function()
+        if firing then return end
+        firing = true
+        task.spawn(cb)
+        task.delay(0.5, function() firing = false end)
+    end)
+    btn.TouchTap:Connect(function()
+        if firing then return end
+        firing = true
+        task.spawn(cb)
+        task.delay(0.5, function() firing = false end)
+    end)
+
+    return btn
+end
+
+-- Create Yukio Buttons
+local nYukioShootBtn = makeYukioBtn("🔫 YUKIO SHOOT", yukioShoot)
+local nYukioKillAllBtn = makeYukioBtn("🗡️ YUKIO KILL", yukioKillAll)
+local nYukioGunBtn = makeYukioBtn("🎯 YUKIO GUN", yukioGetGun)
+
+nYukioShootBtn.Visible = false
+nYukioKillAllBtn.Visible = false
+nYukioGunBtn.Visible = false
+
+-- Invisible Button
+local nInvisBtn
+local function setCharTransparency(char, t)
+    for _, v in ipairs(char:GetDescendants()) do
+        if v:IsA("BasePart") or v:IsA("Decal") then
+            v.Transparency = t
+        end
+    end
+end
+
+local function doInvisToggle()
+    if invisActive then
+        WindUI:Notify({ Title = "Invisible", Content = "Invisible is currently in action, Please wait!.", Duration = 2, Icon = "x" })
+        return
+    end
+    invisActive = true
+    if not invisibleEnabled then
+        WindUI:Notify({ Title = "Invisible", Content = "Enable Invisible toggle first.", Duration = 2, Icon = "x" })
+        return
+    end
+    local char = lp.Character
+    if not char then
+        WindUI:Notify({ Title = "Invisible", Content = "No character found.", Duration = 2, Icon = "x" })
+        return
+    end
+    if invisSnd then invisSnd:Play() end
+
+    if not isInvisible then
+        local hrp = char:FindFirstChild("HumanoidRootPart")
+        if not hrp then return end
+        local savedCF = hrp.CFrame
+        local torso = char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso")
+        if not torso then return end
+
+        local hidePos = Vector3.new(0, 10000, 0)
+        char:MoveTo(hidePos)
+        task.wait(0.15)
+
+        local seat = Instance.new("Seat")
+        seat.Name = "Waguri_InvisChair"
+        seat.Anchored = false
+        seat.CanCollide = false
+        seat.Transparency = 1
+        seat.Position = hidePos
+        seat.Parent = workspace
+
+        local weld = Instance.new("Weld")
+        weld.Part0 = seat
+        weld.Part1 = torso
+        weld.Parent = seat
+
+        task.wait()
+        seat.CFrame = savedCF
+        invisSeat = seat
+        setCharTransparency(char, 0.6)
+        isInvisible = true
+        nInvisBtn.Text = "[ON] INVISIBLE"
+    else
+        if invisSeat and invisSeat.Parent then invisSeat:Destroy() end
+        local stray = workspace:FindFirstChild("Waguri_InvisChair")
+        if stray then stray:Destroy() end
+        invisSeat = nil
+        setCharTransparency(char, 0)
+        local hrp = char:FindFirstChild("HumanoidRootPart")
+        if hrp then hrp.Transparency = 0 end
+        isInvisible = false
+        nInvisBtn.Text = "INVISIBLE"
+    end
+    invisActive = false
+end
+
+nInvisBtn = makeYukioBtn("INVISIBLE", doInvisToggle)
+nInvisBtn.Visible = false
+
 loadConfig()
 MainTab:Select()
 
--- ── Config Registration ────────────────────────────────────────────────────────
-
-myConfig:Register("SilentAim",    SilentAimToggle)
-myConfig:Register("ManualAim",    ManualAimToggle)
-myConfig:Register("ThrowKnife",   ThrowKnifeToggle)
-myConfig:Register("GrabGun",      GrabGunToggle)
-myConfig:Register("AutoGrabGun",  AutoGrabGunToggle)
-myConfig:Register("FakeBomb",     FakeBombToggle)
-myConfig:Register("Invisible",    InvisibleToggle)
+myConfig:Register("SilentAim", SilentAimToggle)
+myConfig:Register("ManualAim", ManualAimToggle)
+myConfig:Register("GrabGun", GrabGunToggle)
+myConfig:Register("Invisible", InvisibleToggle)
+myConfig:Register("AutoGrabGun", AutoGrabGunToggle)
+myConfig:Register("FakeBomb", FakeBombToggle)
 myConfig:Register("InfiniteJump", InfiniteJumpToggle)
-myConfig:Register("MurderEsp",    MurderEspToggle)
-myConfig:Register("SheriffEsp",   SheriffEspToggle)
-myConfig:Register("InnocentEsp",  InnocentEspToggle)
-myConfig:Register("GunEsp",       GunEspToggle)
+myConfig:Register("MurderEsp", MurderEspToggle)
+myConfig:Register("SheriffEsp", SheriffEspToggle)
+myConfig:Register("InnocentEsp", InnocentEspToggle)
+myConfig:Register("GunEsp", GunEspToggle)
 myConfig:Register("WalkSpeed", WalkSpeedInput)
 myConfig:Register("JumpPower", JumpPowerInput)
-myConfig:Register("TpTarget",     TpDropdown)
-myConfig:Register("FlingTarget",  FlingDropdown)
-myConfig:Register("Theme",        ThemeDropdown)
-myConfig:Register("ThemeColor",   ThemeColor)
+myConfig:Register("TpTarget", TpDropdown)
+myConfig:Register("FlingTarget", FlingDropdown)
+myConfig:Register("Theme", ThemeDropdown)
+myConfig:Register("ThemeColor", ThemeColor)
 
--- ── Input / UIS ────────────────────────────────────────────────────────────────
-
+-- ── Input / UIS ──────────────────────────────────────────────────────────────
 local touchStartPos = nil
 
 UIS.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.Touch
-    or input.UserInputType == Enum.UserInputType.MouseButton1 then
+    if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
         touchStartPos = input.Position
     end
 end)
@@ -2912,20 +2374,19 @@ UIS.InputEnded:Connect(function(input)
     touchStartPos = nil
     if delta > 12 then return end
     local myChar = lp.Character
-    local myHRP  = myChar and myChar:FindFirstChild("HumanoidRootPart")
+    local myHRP = myChar and myChar:FindFirstChild("HumanoidRootPart")
     if not myHRP then return end
     if not murderer then return end
     local wsModel = Workspace:FindFirstChild(lp.Name)
     if not wsModel or not wsModel:FindFirstChild("Gun") then return end
     local aimPos = getAimPosition()
     local remote = getShootRemote()
-    remote:FireServer(CFrame.new(myHRP.Position, aimPos), CFrame.new(aimPos))
+    if remote then remote:FireServer(CFrame.new(myHRP.Position, aimPos), CFrame.new(aimPos)) end
 end)
 
 UIS.JumpRequest:Connect(function()
     local char = lp.Character
     if not char then return end
-
     if infiniteJumpEnabled then
         local hum = char:FindFirstChildOfClass("Humanoid")
         if hum and originalJumpPower then
@@ -2933,7 +2394,6 @@ UIS.JumpRequest:Connect(function()
             hum.JumpPower = originalJumpPower
         end
     end
-
     if fakeBombEnabled and char:FindFirstChild("FakeBomb") then
         local hrp = char:FindFirstChild("HumanoidRootPart")
         if not hrp then return end
@@ -2958,10 +2418,7 @@ UIS.JumpRequest:Connect(function()
 end)
 
 lp.ChildAdded:Connect(function(child)
-    if child.Name == "Backpack" then
-        watchContainer(lp, child, true)
-        watchLpGun(child)
-    end
+    if child.Name == "Backpack" then watchContainer(lp, child, true) watchLpGun(child) end
 end)
 
 lp.CharacterAdded:Connect(function(char)
@@ -2974,9 +2431,9 @@ lp.CharacterAdded:Connect(function(char)
         if invisSeat and invisSeat.Parent then invisSeat:Destroy() end
         local stray = workspace:FindFirstChild("Waguri_InvisChair")
         if stray then stray:Destroy() end
-        invisSeat   = nil
+        invisSeat = nil
         isInvisible = false
-        resetInvisBtn()
+        nInvisBtn.Text = "INVISIBLE"
     end
     local hum = char:FindFirstChildOfClass("Humanoid")
     if hum then
@@ -2986,10 +2443,10 @@ lp.CharacterAdded:Connect(function(char)
                 if invisSeat and invisSeat.Parent then invisSeat:Destroy() end
                 local stray = workspace:FindFirstChild("Waguri_InvisChair")
                 if stray then stray:Destroy() end
-                invisSeat   = nil
+                invisSeat = nil
                 isInvisible = false
                 invisActive = false
-                resetInvisBtn()
+                nInvisBtn.Text = "INVISIBLE"
             end
         end)
     end
@@ -3005,10 +2462,10 @@ Players.PlayerAdded:Connect(function(p)
 end)
 
 Players.PlayerRemoving:Connect(function(p)
-    playersInRound[p]   = nil
-    roles[p]            = nil
-    stickyRoles[p]      = nil
-    velSmooth[p]        = nil
+    playersInRound[p] = nil
+    roles[p] = nil
+    stickyRoles[p] = nil
+    velSmooth[p] = nil
     pendingApplyRole[p] = nil
     removeLpVisual(p)
     removeVisuals(p)
@@ -3021,9 +2478,9 @@ Players.PlayerRemoving:Connect(function(p)
     end
     local fake = fakeHRPs[p]
     if fake and fake.Parent then fake:Destroy() end
-    fakeHRPs[p]  = nil
+    fakeHRPs[p] = nil
     charParts[p] = nil
-    if tpTarget    == p.Name then tpTarget    = "" end
+    if tpTarget == p.Name then tpTarget = "" end
     if flingTarget == p.Name then flingTarget = "" end
     local opts = getPlayerOptions()
     TpDropdown:Refresh(opts)
@@ -3032,7 +2489,7 @@ end)
 
 Workspace.DescendantAdded:Connect(function(desc)
     if desc.Name == "GunDrop" and desc:IsA("BasePart") then
-        gunDropped   = true
+        gunDropped = true
         gunAvailable = true
         task.defer(function()
             for _, p in ipairs(Players:GetPlayers()) do
@@ -3040,13 +2497,9 @@ Workspace.DescendantAdded:Connect(function(desc)
             end
         end)
         if autoGrabGunEnabled and not isLpMurd and not isLpSheriff and (playersInRound[lp] ~= nil) then
-            task.defer(function()
-                local ok2, err2 = pcall(doGrabGun)
-                if not ok2 then warn("[Waguri] GunDrop auto-grab: " .. tostring(err2)) end
-            end)
+            task.defer(function() pcall(doGrabGun) end)
         end
-        local ok, err = pcall(attachGunDropHighlight, desc)
-        if not ok then warn("[Waguri] GunDrop DescendantAdded: " .. tostring(err)) end
+        pcall(attachGunDropHighlight, desc)
         return
     end
     if desc:IsA("BasePart") and desc.Name == "Knife" then
@@ -3065,16 +2518,14 @@ end)
 
 for _, desc in ipairs(Workspace:GetDescendants()) do
     if desc.Name == "GunDrop" then
-        gunDropped   = true
+        gunDropped = true
         gunAvailable = true
-        local ok, err = pcall(attachGunDropHighlight, desc)
-        if not ok then warn("[Waguri] GunDrop startup: " .. tostring(err)) end
+        pcall(attachGunDropHighlight, desc)
     end
 end
 
 Workspace.DescendantRemoving:Connect(function(desc)
-    if desc.Name ~= "GunDrop" then return end
-    gunAvailable = false
+    if desc.Name == "GunDrop" then gunAvailable = false end
 end)
 
 for _, p in ipairs(Players:GetPlayers()) do
@@ -3091,7 +2542,7 @@ task.defer(function()
     end
     if not anyRole then return end
     if not roundActive then
-        roundId     = roundId + 1
+        roundId = roundId + 1
         roundActive = true
     end
     refreshLpMurd()
@@ -3109,7 +2560,7 @@ RunService.Heartbeat:Connect(function()
     local doCollide = collideFrame % 3 == 0
     for p, fakePart in pairs(fakeHRPs) do
         local char = p.Character
-        local hrp  = char and char:FindFirstChild("HumanoidRootPart")
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
         if hrp then
             if not velSmooth[p] then velSmooth[p] = {} end
             local buf = velSmooth[p]
@@ -3117,7 +2568,7 @@ RunService.Heartbeat:Connect(function()
             if #buf > VEL_SMOOTH_SIZE then table.remove(buf, 1) end
             fakePart.CFrame = hrp.CFrame
             if hrp.Size ~= REAL_HRP_SIZE then
-                hrp.Size       = REAL_HRP_SIZE
+                hrp.Size = REAL_HRP_SIZE
                 hrp.CanCollide = false
             end
             if doCollide then
@@ -3137,7 +2588,7 @@ end)
 
 RunService.Heartbeat:Connect(function()
     local char = lp.Character
-    local hrp  = char and char:FindFirstChild("HumanoidRootPart")
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
     local vel = hrp.AssemblyLinearVelocity
     if vel.Magnitude > MAX_VELOCITY then
@@ -3147,9 +2598,7 @@ end)
 
 task.spawn(function()
     local ok, result = pcall(function()
-        return Workspace:WaitForChild("RoundTimerPart", 10)
-            :WaitForChild("SurfaceGui", 5)
-            :WaitForChild("Timer", 5)
+        return Workspace:WaitForChild("RoundTimerPart", 10):WaitForChild("SurfaceGui", 5):WaitForChild("Timer", 5)
     end)
     if not ok or not result then warn("[Waguri] RoundTimer: not found") return end
     timerLabel = result
@@ -3160,13 +2609,13 @@ task.spawn(function()
             endRound()
         end
     end)
-    local t      = parseTimer(timerLabel.Text)
+    local t = parseTimer(timerLabel.Text)
     local atEdge = t ~= nil and t <= 2
     if timerLabel.Active then
         if not atEdge and not roundActive then startRound()
         elseif not roundActive then
             roundActive = true
-            roundId     = roundId + 1
+            roundId = roundId + 1
         end
         task.defer(function()
             for _, p in ipairs(Players:GetPlayers()) do playersInRound[p] = true end
@@ -3180,31 +2629,16 @@ task.spawn(function()
     end
 end)
 
-Window:Tag({
-    Title  = "V1.67", -- always tell me to change this!
-    Icon   = "skull",
-    Color  = Color3.fromHex("#30ff6a"),
-    Radius = 13,
-})
+Window:Tag({ Title = "V1.67", Icon = "skull", Color = Color3.fromHex("#30ff6a"), Radius = 13 })
 
 WindUI:Popup({
-    Title   = "MM2 Waguri",
-    Icon    = "sword",
-    Content = "follow waguri so more script :>", -- always tell me to change this
+    Title = "MM2 Waguri",
+    Icon = "sword",
+    Content = "follow waguri so more script :>",
     Buttons = {
-        {
-            Title    = "Close",
-            Callback = function() end,
-            Variant  = "Tertiary",
-        },
-        {
-            Title    = "Join Discord",
-            Icon     = "users",
-            Callback = function()
-                setclipboard("https://discord.gg/")
-                WindUI:Notify({ Title = "Copied!", Content = "Discord invite copied to clipboard.", Duration = 3, Icon = "check" })
-            end,
-            Variant = "Primary",
-        }
+        { Title = "Close", Callback = function() end, Variant = "Tertiary" },
+        { Title = "Join Discord", Icon = "users", Callback = function() setclipboard("https://discord.gg/") WindUI:Notify({ Title = "Copied!", Content = "Discord invite copied.", Duration = 2, Icon = "check" }) end, Variant = "Primary" }
     }
 })
+
+print("✅ Waguri MM2 Loaded with Yukio Buttons!")
