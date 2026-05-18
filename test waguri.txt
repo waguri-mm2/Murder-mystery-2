@@ -1375,9 +1375,74 @@ HomeTab:Toggle({
     end
 })
 
--- ── Home Tab: Touch Fling ────────────────────────────────────────────────────
-local touchFlingEnabled = false
+-- ── Home Tab: Touch Fling + Anti Fling (Fixed) ─────────────────────────────────
 
+local touchFlingEnabled = false
+local antiFlingEnabled = false
+
+-- Strong Fling Function (Same as the working one)
+local function SHubFling(targetPlayer)
+    if not targetPlayer or targetPlayer == lp then return end
+    local char = lp.Character
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    local root = hum and hum.RootPart
+    if not (char and hum and root) then return end
+
+    local tChar = targetPlayer.Character
+    if not tChar then return end
+
+    local tHum = tChar:FindFirstChildOfClass("Humanoid")
+    local tRoot = tHum and tHum.RootPart
+    local tHead = tChar:FindFirstChild("Head")
+
+    local oldCF = root.CFrame
+
+    -- Camera trick for better fling
+    if tHead then workspace.CurrentCamera.CameraSubject = tHead end
+
+    local function FPos(bp, pos, ang)
+        root.CFrame = CFrame.new(bp.Position) * pos * ang
+        root.AssemblyLinearVelocity = Vector3.new(9e7, 9e8, 9e7)
+        root.AssemblyAngularVelocity = Vector3.new(9e8, 9e8, 9e8)
+    end
+
+    local function SFBasePart(bp)
+        local start = tick()
+        local angle = 0
+        repeat
+            if root and tHum then
+                angle += 100
+                for _, offset in ipairs({
+                    CFrame.new(0, 1.5, 0),
+                    CFrame.new(0, -1.5, 0),
+                    CFrame.new(2.25, 1.5, -2.25),
+                    CFrame.new(-2.25, -1.5, 2.25)
+                }) do
+                    FPos(bp, offset + (tHum.MoveDirection or Vector3.zero), CFrame.Angles(math.rad(angle), 0, 0))
+                    task.wait()
+                end
+            end
+        until (bp.Velocity.Magnitude > 400 or tick() - start > 2.8)
+    end
+
+    local bv = Instance.new("BodyVelocity")
+    bv.Velocity = Vector3.new(9e8, 9e8, 9e8)
+    bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+    bv.Parent = root
+
+    hum:SetStateEnabled(Enum.HumanoidStateType.Seated, false)
+
+    local target = tRoot or tHead
+    if target then SFBasePart(target) end
+
+    bv:Destroy()
+    hum:SetStateEnabled(Enum.HumanoidStateType.Seated, true)
+
+    workspace.CurrentCamera.CameraSubject = hum
+    root.CFrame = oldCF
+end
+
+-- Touch Fling Toggle
 HomeTab:Toggle({
     Title    = "Touch Fling",
     Desc     = "Flings anyone who touches you",
@@ -1386,33 +1451,13 @@ HomeTab:Toggle({
     Value    = false,
     Callback = function(Value)
         touchFlingEnabled = Value
-        local movel = 0.1
-
-        task.spawn(function()
-            while touchFlingEnabled do
-                local char = lp.Character
-                local hrp  = char and char:FindFirstChild("HumanoidRootPart")
-                if hrp then
-                    local vel = hrp.Velocity
-                    hrp.Velocity = vel * 9e8 + Vector3.new(0, 9e8, 0)
-                    RunService.RenderStepped:Wait()
-                    if char and char.Parent and hrp and hrp.Parent then
-                        hrp.Velocity = vel
-                    end
-                    RunService.Stepped:Wait()
-                    if char and char.Parent and hrp and hrp.Parent then
-                        hrp.Velocity = vel + Vector3.new(0, movel, 0)
-                        movel = movel * -1
-                    end
-                end
-                RunService.Heartbeat:Wait()
-            end
-        end)
+        if Value then
+            WindUI:Notify({Title = "Touch Fling", Content = "Enabled - Touch players to fling them", Duration = 3})
+        end
     end
 })
 
-local antiFlingEnabled = false
-
+-- Anti Fling Toggle
 HomeTab:Toggle({
     Title    = "Anti Fling",
     Desc     = "Disables collision on all other players so they can't fling you",
@@ -1421,36 +1466,58 @@ HomeTab:Toggle({
     Value    = false,
     Callback = function(Value)
         antiFlingEnabled = Value
-
         if not Value then
-            for _, player in pairs(Players:GetPlayers()) do
-                if player ~= lp and player.Character then
-                    for _, v in pairs(player.Character:GetDescendants()) do
+            -- Reset collision
+            for _, player in ipairs(Players:GetPlayers()) do
+                if player \~= lp and player.Character then
+                    for _, v in ipairs(player.Character:GetDescendants()) do
                         if v:IsA("BasePart") then
                             v.CanCollide = true
                         end
                     end
                 end
             end
-            return
         end
+    end
+})
 
-        task.spawn(function()
-            while antiFlingEnabled do
-                for _, player in pairs(Players:GetPlayers()) do
-                    if player ~= lp and player.Character then
-                        for _, v in pairs(player.Character:GetDescendants()) do
-                            if v:IsA("BasePart") then
-                                v.CanCollide = false
-                            end
+-- Touch Fling Logic (Proper Touched Event)
+RunService.Heartbeat:Connect(function()
+    if not touchFlingEnabled then return end
+    local char = lp.Character
+    if not char then return end
+
+    for _, part in ipairs(char:GetChildren()) do
+        if part:IsA("BasePart") then
+            part.Touched:Once(function(hit)   -- Once = avoid lag
+                if not touchFlingEnabled then return end
+                local model = hit:FindFirstAncestorWhichIsA("Model")
+                local player = model and Players:GetPlayerFromCharacter(model)
+                if player and player \~= lp then
+                    pcall(SHubFling, player)
+                end
+            end)
+        end
+    end
+end)
+
+-- Anti Fling Loop
+task.spawn(function()
+    while true do
+        task.wait(0.12)
+        if antiFlingEnabled then
+            for _, player in ipairs(Players:GetPlayers()) do
+                if player \~= lp and player.Character then
+                    for _, v in ipairs(player.Character:GetDescendants()) do
+                        if v:IsA("BasePart") then
+                            v.CanCollide = false
                         end
                     end
                 end
-                task.wait()
             end
-        end)
+        end
     end
-})
+end)
 
 HomeTab:Button({
     Title    = "Fling Murderer",
