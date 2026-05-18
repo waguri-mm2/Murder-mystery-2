@@ -2230,7 +2230,7 @@ local InnocentEspToggle = VisualsTab:Toggle({
     end
 })
 
--- ── Role ESP (MM2 + MMV Compatible) ────────────────────────────────────────────
+-- ── Role ESP (via RemoteFunction) ─────────────────────────────────────────────
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local LocalPlayer = Players.LocalPlayer
 
@@ -2238,112 +2238,27 @@ local roleESPEnabled = false
 local roleESPLoop = nil
 
 local roleColors2 = {
-    -- MM2 roles
-    Murderer  = Color3.fromRGB(255, 0, 0),
-    Sheriff   = Color3.fromRGB(0, 0, 255),
-    Innocent  = Color3.fromRGB(0, 255, 0),
-    -- MMV roles
-    Killer    = Color3.fromRGB(255, 0, 0),
-    Hero      = Color3.fromRGB(255, 255, 0),
-    Bystander = Color3.fromRGB(0, 255, 0),
-    -- Fallback
-    Default   = Color3.fromRGB(200, 200, 200),
+    Murderer = Color3.fromRGB(255, 0, 0),
+    Sheriff  = Color3.fromRGB(0, 0, 255),
+    Hero     = Color3.fromRGB(255, 255, 0),
+    Innocent = Color3.fromRGB(0, 255, 0),
+    Default  = Color3.fromRGB(200, 200, 200),
 }
 
--- ── Game Detection ──────────────────────────────────────────────────────────────
-local function detectGame()
-    local gameId = game.PlaceId
-    -- MMV place IDs (main + sub-places)
-    local mmvIds = { [2414851778] = true, [286090429] = true }
-    if mmvIds[gameId] then return "MMV" end
-    return "MM2" -- default
-end
-
-local GAME = detectGame()
-
--- ── Role Fetching ───────────────────────────────────────────────────────────────
-local function getRolesMM2()
-    local fn = ReplicatedStorage:FindFirstChild("GetPlayerData", true)
-    if not fn then return {} end
-    local ok, data = pcall(function() return fn:InvokeServer() end)
-    if not ok or type(data) ~= "table" then return {} end
+local function getRoles()
+    local ok, data = pcall(function()
+        return ReplicatedStorage:FindFirstChild("GetPlayerData", true):InvokeServer()
+    end)
+    if not ok or not data then return {} end
     local out = {}
     for plr, plrData in pairs(data) do
-        if type(plrData) == "table" and not plrData.Dead then
+        if not plrData.Dead then
             out[plr] = plrData.Role
         end
     end
     return out
 end
 
-local function getRolesMMV()
-    local out = {}
-
-    -- Method 1: Try RemoteFunction (adjust name if MMV uses a different one)
-    local fn = ReplicatedStorage:FindFirstChild("GetRoleData", true)
-        or ReplicatedStorage:FindFirstChild("FetchRoles", true)
-        or ReplicatedStorage:FindFirstChild("GetPlayerData", true)
-
-    if fn and fn:IsA("RemoteFunction") then
-        local ok, data = pcall(function() return fn:InvokeServer() end)
-        if ok and type(data) == "table" then
-            for plr, plrData in pairs(data) do
-                if type(plrData) == "table" then
-                    -- MMV may use "Role", "role", or "Type"
-                    local role = plrData.Role or plrData.role or plrData.Type or plrData.type
-                    if role and not plrData.Dead and not plrData.dead then
-                        out[plr] = role
-                    end
-                elseif type(plrData) == "string" then
-                    -- Some versions return { [playerName] = "RoleName" }
-                    out[plr] = plrData
-                end
-            end
-            if next(out) then return out end
-        end
-    end
-
-    -- Method 2: Read role from player's Character or leaderstats attributes
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer then
-            -- Check leaderstats
-            local ls = player:FindFirstChild("leaderstats")
-            if ls then
-                local roleVal = ls:FindFirstChild("Role") or ls:FindFirstChild("role")
-                if roleVal then
-                    out[player.Name] = tostring(roleVal.Value)
-                end
-            end
-            -- Check direct attributes on Player
-            if not out[player.Name] then
-                local attr = player:GetAttribute("Role") or player:GetAttribute("role")
-                    or player:GetAttribute("PlayerRole") or player:GetAttribute("Team")
-                if attr then
-                    out[player.Name] = tostring(attr)
-                end
-            end
-            -- Check direct StringValue children
-            if not out[player.Name] then
-                local rv = player:FindFirstChild("Role") or player:FindFirstChild("PlayerRole")
-                if rv and (rv:IsA("StringValue") or rv:IsA("IntValue")) then
-                    out[player.Name] = tostring(rv.Value)
-                end
-            end
-        end
-    end
-
-    return out
-end
-
-local function getRoles()
-    if GAME == "MMV" then
-        return getRolesMMV()
-    else
-        return getRolesMM2()
-    end
-end
-
--- ── ESP Rendering ───────────────────────────────────────────────────────────────
 local function clearRoleESP()
     for _, player in ipairs(Players:GetPlayers()) do
         if player ~= LocalPlayer and player.Character then
@@ -2406,7 +2321,6 @@ local function updateRoleESP()
     end
 end
 
--- ── Loop ─────────────────────────────────────────────────────────────────────────
 local function startRoleESP()
     if roleESPLoop then return end
     roleESPLoop = task.spawn(function()
@@ -2421,7 +2335,7 @@ end
 
 VisualsTab:Toggle({
     Title    = "Role ESP (Instant Reveal)",
-    Desc     = ("Shows everyone's role via server data [%s]"):format(GAME),
+    Desc     = "Shows everyone's role via server data",
     Icon     = "eye",
     Type     = "Checkbox",
     Value    = false,
@@ -2615,7 +2529,7 @@ CreditsTab:Paragraph({
             Icon     = "users",
             Title    = "Discord",
             Callback = function()
-                setclipboard("https://discord.gg/")
+                setclipboard("https://discord.gg/pk6WbGqZ5X")
                 WindUI:Notify({ Title = "Copied!", Content = "Discord invite copied to clipboard.", Duration = 3, Icon = "check" })
             end,
         }
