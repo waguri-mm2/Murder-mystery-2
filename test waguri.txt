@@ -1411,6 +1411,62 @@ HomeTab:Toggle({
     end
 })
 
+HomeTab:Button({
+    Title    = "Fling Murderer",
+    Desc     = "Flings the current murderer",
+    Icon     = "zap",
+    Callback = function()
+        local target = nil
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p ~= lp and p.Character then
+                local char = p.Character
+                local bp   = p:FindFirstChild("Backpack")
+                local ws   = Workspace:FindFirstChild(p.Name)
+                if char:FindFirstChild("Knife")
+                or (bp and bp:FindFirstChild("Knife"))
+                or (ws and ws:FindFirstChild("Knife")) then
+                    target = p
+                    break
+                end
+            end
+        end
+        if target then
+            local ok, err = pcall(SkidFling, target)
+            if not ok then warn("[Waguri] FlingMurd: " .. tostring(err)) end
+        else
+            WindUI:Notify({ Title = "Fling", Content = "No murderer found.", Duration = 3, Icon = "x" })
+        end
+    end
+})
+
+HomeTab:Button({
+    Title    = "Fling Sheriff",
+    Desc     = "Flings the current sheriff or hero",
+    Icon     = "zap",
+    Callback = function()
+        local target = nil
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p ~= lp and p.Character then
+                local char = p.Character
+                local bp   = p:FindFirstChild("Backpack")
+                local ws   = Workspace:FindFirstChild(p.Name)
+                if char:FindFirstChild("Gun")
+                or (bp and bp:FindFirstChild("Gun"))
+                or (ws and ws:FindFirstChild("Gun")) then
+                    target = p
+                    break
+                end
+            end
+        end
+        if target then
+            local ok, err = pcall(SkidFling, target)
+            if not ok then warn("[Waguri] FlingSheriff: " .. tostring(err)) end
+        else
+            WindUI:Notify({ Title = "Fling", Content = "No sheriff/hero found.", Duration = 3, Icon = "x" })
+        end
+    end
+})
+
 -- ── Toggles ───────────────────────────────────────────────────────────────────
 local SilentAimToggle = MainTab:Toggle({
     Title    = "Silent Aim",
@@ -2238,51 +2294,22 @@ local roleESPEnabled = false
 local roleESPLoop = nil
 
 local roleColors2 = {
-    -- MM2 roles
-    Murderer  = Color3.fromRGB(255, 0, 0),
-    Sheriff   = Color3.fromRGB(0, 0, 255),
-    Hero      = Color3.fromRGB(255, 255, 0),
-    Innocent  = Color3.fromRGB(0, 255, 0),
-    -- MMV roles
-    Killer    = Color3.fromRGB(255, 0, 0),
-    Bystander = Color3.fromRGB(0, 255, 0),
-    Default   = Color3.fromRGB(200, 200, 200),
+    Murderer = Color3.fromRGB(255, 0, 0),
+    Sheriff  = Color3.fromRGB(0, 0, 255),
+    Hero     = Color3.fromRGB(255, 255, 0),
+    Innocent = Color3.fromRGB(0, 255, 0),
+    Default  = Color3.fromRGB(200, 200, 200),
 }
 
 local function getRoles()
-    -- Try RemoteFunction (works for MM2 and some MMV versions)
-    local fn = ReplicatedStorage:FindFirstChild("GetPlayerData", true)
-    if fn and fn:IsA("RemoteFunction") then
-        local ok, data = pcall(function() return fn:InvokeServer() end)
-        if ok and type(data) == "table" then
-            local out = {}
-            for plr, plrData in pairs(data) do
-                if type(plrData) == "table" then
-                    local dead = plrData.Dead or plrData.dead or false
-                    local role = plrData.Role or plrData.role or plrData.Type or plrData.type
-                    if not dead and role then
-                        out[plr] = tostring(role)
-                    end
-                elseif type(plrData) == "string" then
-                    out[plr] = plrData
-                end
-            end
-            if next(out) then return out end
-        end
-    end
-    -- MMV fallback: read role from player attributes or leaderstats
+    local ok, data = pcall(function()
+        return ReplicatedStorage:FindFirstChild("GetPlayerData", true):InvokeServer()
+    end)
+    if not ok or not data then return {} end
     local out = {}
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer then
-            local attr = player:GetAttribute("Role") or player:GetAttribute("role")
-                      or player:GetAttribute("PlayerRole") or player:GetAttribute("Team")
-            if attr then
-                out[player.Name] = tostring(attr)
-            else
-                local ls = player:FindFirstChild("leaderstats")
-                local rv = ls and (ls:FindFirstChild("Role") or ls:FindFirstChild("role"))
-                if rv then out[player.Name] = tostring(rv.Value) end
-            end
+    for plr, plrData in pairs(data) do
+        if not plrData.Dead then
+            out[plr] = plrData.Role
         end
     end
     return out
@@ -2558,7 +2585,7 @@ CreditsTab:Paragraph({
             Icon     = "users",
             Title    = "Discord",
             Callback = function()
-                setclipboard("https://discord.gg/")
+                setclipboard("https://discord.gg/pk6WbGqZ5X")
                 WindUI:Notify({ Title = "Copied!", Content = "Discord invite copied to clipboard.", Duration = 3, Icon = "check" })
             end,
         }
