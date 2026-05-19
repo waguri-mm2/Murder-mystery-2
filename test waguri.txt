@@ -136,7 +136,7 @@ local function loadConfig()
         applyJumpPower(tostring(JumpPowerInput.Value or "50"))
 
         silentAimEnabled    = SilentAimToggle.Value    or false
-        manualAimEnabled    = CombatAimToggle.Value     or false
+        manualAimEnabled    = ManualAimToggle.Value     or false
         grabGunEnabled      = GrabGunToggle.Value       or false
         autoGrabGunEnabled  = AutoGrabGunToggle.Value  or false
         fakeBombEnabled     = FakeBombToggle.Value      or false
@@ -147,11 +147,6 @@ local function loadConfig()
         espSheriff  = SheriffEspToggle.Value  ~= false
         espInnocent = InnocentEspToggle.Value ~= false
         espGun      = GunEspToggle.Value      ~= false
-
-        if nYukioShootBtn then nYukioShootBtn.Visible = manualAimEnabled end
-        if nYukioKillAllBtn then nYukioKillAllBtn.Visible = isLpMurd end
-        if nYukioGunBtn then nYukioGunBtn.Visible = grabGunEnabled end
-        if nInvisBtn then nInvisBtn.Visible = invisibleEnabled end
 
         if TpDropdown.Value    and TpDropdown.Value.Title    then tpTarget    = TpDropdown.Value.Title    end
         if FlingDropdown.Value and FlingDropdown.Value.Title then flingTarget = FlingDropdown.Value.Title end
@@ -194,7 +189,7 @@ Window:EditOpenButton({
 
 -- TABS
 local HomeTab      = Window:Tab({ Title = "Home",     Icon = "radar"    })
-local CombatTab    = Window:Tab({ Title = "Combat",   Icon = "sword"    })
+local MM2Tab       = Window:Tab({ Title = "MM2",      Icon = "sword"    })
 local PlayersTab   = Window:Tab({ Title = "Players",  Icon = "users"    })
 local VisualsTab   = Window:Tab({ Title = "Visuals",  Icon = "eye"      })
 local AutoFarmTab  = Window:Tab({ Title = "Auto Farm", Icon = "star"    })
@@ -202,12 +197,22 @@ local MiscTab      = Window:Tab({ Title = "Misc",     Icon = "info"     })
 local CreditsTab   = Window:Tab({ Title = "Credits",  Icon = "heart"    })
 local SettingsTab  = Window:Tab({ Title = "Settings", Icon = "settings" })
 
--- ========== COMBAT TAB BUTTONS ==========
--- Shoot Button
-CombatTab:Button({
-    Title    = "🔫 SHOOT MURDERER",
-    Desc     = "Auto-aims and shoots the murderer",
-    Icon     = "target",
+-- ========== MM2 TAB - YUKIO BUTTONS IN WAGURI STYLE ==========
+
+-- Paragraph header
+MM2Tab:Paragraph({
+    Title = "⚔️ YUKIO COMBAT SYSTEM ⚔️",
+    Desc = "Click buttons below to fight!",
+    Color = "Red",
+    Thumbnail = "https://www.roblox.com/asset-thumbnail/image?assetId=80648874729441&width=420&height=420&format=png",
+    ThumbnailSize = 80,
+})
+
+-- SHOOT BUTTON
+MM2Tab:Button({
+    Title = "🔫 SHOOT MURDERER",
+    Desc = "Auto-aims and shoots the murderer (requires gun)",
+    Icon = "target",
     Callback = function()
         local myChar = lp.Character
         if not myChar then
@@ -237,15 +242,15 @@ CombatTab:Button({
         pcall(function()
             remote:FireServer(CFrame.new(myHRP.Position, aimPos), CFrame.new(aimPos))
         end)
-        WindUI:Notify({ Title = "Shoot", Content = "🔫 Shot fired!", Duration = 1, Icon = "target" })
+        WindUI:Notify({ Title = "Shoot", Content = "🔫 Shot fired at murderer!", Duration = 1, Icon = "target" })
     end
 })
 
--- Kill All Button
-CombatTab:Button({
-    Title    = "🗡️ KILL ALL",
-    Desc     = "Kills all players (Requires Murderer)",
-    Icon     = "sword",
+-- KILL ALL BUTTON
+MM2Tab:Button({
+    Title = "🗡️ KILL ALL",
+    Desc = "Kills all players (Requires Murderer role)",
+    Icon = "sword",
     Callback = function()
         if not isLpMurd then
             WindUI:Notify({ Title = "Kill All", Content = "You are not the Murderer!", Duration = 2, Icon = "x" })
@@ -281,11 +286,11 @@ CombatTab:Button({
     end
 })
 
--- Get Gun Button
-CombatTab:Button({
-    Title    = "🎯 GET GUN",
-    Desc     = "Teleports to and grabs the gun drop",
-    Icon     = "target",
+-- GET GUN BUTTON
+MM2Tab:Button({
+    Title = "🎯 GET GUN",
+    Desc = "Teleports to and grabs the gun drop",
+    Icon = "target",
     Callback = function()
         local char = lp.Character
         local hrp = char and char:FindFirstChild("HumanoidRootPart")
@@ -311,11 +316,11 @@ CombatTab:Button({
     end
 })
 
--- Invisible Button
-CombatTab:Button({
-    Title    = "👻 INVISIBLE",
-    Desc     = "Makes your character invisible",
-    Icon     = "eye-off",
+-- INVISIBLE BUTTON
+MM2Tab:Button({
+    Title = "👻 INVISIBLE",
+    Desc = "Makes your character invisible",
+    Icon = "eye-off",
     Callback = function()
         if invisActive then
             WindUI:Notify({ Title = "Invisible", Content = "Please wait!", Duration = 2, Icon = "x" })
@@ -382,48 +387,50 @@ CombatTab:Button({
     end
 })
 
--- Combat Toggles Section
-CombatTab:Divider()
-CombatTab:Paragraph({ Title = "Combat Settings", Desc = "Configure combat features below", Color = "Red" })
+-- Divider
+MM2Tab:Divider()
 
-local CombatAimToggle = CombatTab:Toggle({
-    Title    = "Manual Aim",
-    Desc     = "Enable the Shoot button above",
-    Type     = "Checkbox",
-    Value    = false,
+-- TOGGLES SECTION
+MM2Tab:Paragraph({ Title = "⚙️ COMBAT SETTINGS", Desc = "Enable/disable features below", Color = "Red" })
+
+local ManualAimToggle = MM2Tab:Toggle({
+    Title = "Manual Aim",
+    Desc = "Enable the Shoot button above",
+    Type = "Checkbox",
+    Value = false,
     Callback = function(state)
         manualAimEnabled = state
         saveConfig()
     end
 })
 
-local GrabGunToggle = CombatTab:Toggle({
-    Title    = "Grab Gun",
-    Desc     = "Enable the Get Gun button above",
-    Type     = "Checkbox",
-    Value    = false,
+local GrabGunToggle = MM2Tab:Toggle({
+    Title = "Grab Gun",
+    Desc = "Enable the Get Gun button above",
+    Type = "Checkbox",
+    Value = false,
     Callback = function(state)
         grabGunEnabled = state
         saveConfig()
     end
 })
 
-local InvisibleToggle = CombatTab:Toggle({
-    Title    = "Invisible",
-    Desc     = "Enable the Invisible button above",
-    Type     = "Checkbox",
-    Value    = false,
+local InvisibleToggle = MM2Tab:Toggle({
+    Title = "Invisible",
+    Desc = "Enable the Invisible button above",
+    Type = "Checkbox",
+    Value = false,
     Callback = function(state)
         invisibleEnabled = state
         saveConfig()
     end
 })
 
-local AutoGrabGunToggle = CombatTab:Toggle({
-    Title    = "Auto Grab Gun",
-    Desc     = "Automatically grabs the gun when it drops",
-    Type     = "Checkbox",
-    Value    = false,
+local AutoGrabGunToggle = MM2Tab:Toggle({
+    Title = "Auto Grab Gun",
+    Desc = "Automatically grabs the gun when it drops",
+    Type = "Checkbox",
+    Value = false,
     Callback = function(state)
         autoGrabGunEnabled = state
         if state then
@@ -453,46 +460,52 @@ local AutoGrabGunToggle = CombatTab:Toggle({
     end
 })
 
-local FakeBombToggle = CombatTab:Toggle({
-    Title    = "Fake Bomb",
-    Desc     = "Auto triggers fake bomb at jump apex",
-    Type     = "Checkbox",
-    Value    = false,
+local FakeBombToggle = MM2Tab:Toggle({
+    Title = "Fake Bomb",
+    Desc = "Auto triggers fake bomb at jump apex",
+    Type = "Checkbox",
+    Value = false,
     Callback = function(state)
         fakeBombEnabled = state
         saveConfig()
     end
 })
 
-local InfiniteJumpToggle = CombatTab:Toggle({
-    Title    = "Infinite Jump",
-    Desc     = "Jump infinitely in mid-air",
-    Icon     = "arrow-up",
-    Type     = "Checkbox",
-    Value    = false,
+local InfiniteJumpToggle = MM2Tab:Toggle({
+    Title = "Infinite Jump",
+    Desc = "Jump infinitely in mid-air",
+    Icon = "arrow-up",
+    Type = "Checkbox",
+    Value = false,
     Callback = function(state)
         infiniteJumpEnabled = state
         saveConfig()
     end
 })
 
-local SilentAimToggle = CombatTab:Toggle({
-    Title    = "Silent Aim",
-    Desc     = "Auto-aims and fires at the murderer on left click",
-    Type     = "Checkbox",
-    Value    = false,
+local SilentAimToggle = MM2Tab:Toggle({
+    Title = "Silent Aim",
+    Desc = "Auto-aims and fires at the murderer on left click",
+    Type = "Checkbox",
+    Value = false,
     Callback = function(state)
         silentAimEnabled = state
         saveConfig()
     end
 })
 
--- Walk Speed & Jump Power in Combat Tab
-CombatTab:Divider()
-CombatTab:Paragraph({ Title = "Movement Settings", Desc = "Adjust your speed and jump", Color = "Red" })
+-- Divider
+MM2Tab:Divider()
 
-local WalkSpeedInput = CombatTab:Input({
-    Title = "Walk Speed", Desc = "Enter a value between 0 and 100", Icon = "footprints", Placeholder = "Default: 17", Numeric = true,
+-- MOVEMENT SETTINGS
+MM2Tab:Paragraph({ Title = "🏃 MOVEMENT SETTINGS", Desc = "Adjust your speed and jump", Color = "Red" })
+
+local WalkSpeedInput = MM2Tab:Input({
+    Title = "Walk Speed",
+    Desc = "Enter a value between 0 and 100",
+    Icon = "footprints",
+    Placeholder = "Default: 17",
+    Numeric = true,
     Callback = function(value)
         local n = tonumber(value)
         if not n then return end
@@ -503,8 +516,12 @@ local WalkSpeedInput = CombatTab:Input({
     end
 })
 
-local JumpPowerInput = CombatTab:Input({
-    Title = "Jump Power", Desc = "Enter a value between 0 and 200", Icon = "arrow-up", Placeholder = "Default: 50", Numeric = true,
+local JumpPowerInput = MM2Tab:Input({
+    Title = "Jump Power",
+    Desc = "Enter a value between 0 and 200",
+    Icon = "arrow-up",
+    Placeholder = "Default: 50",
+    Numeric = true,
     Callback = function(value)
         local n = tonumber(value)
         if not n then return end
@@ -515,7 +532,7 @@ local JumpPowerInput = CombatTab:Input({
     end
 })
 
--- ========== END OF COMBAT TAB ==========
+-- ========== END OF MM2 TAB ==========
 
 -- ── Home Tab: Seconds Life (Godmode) ─────────────────────────────────────────
 HomeTab:Paragraph({
@@ -1161,7 +1178,255 @@ PlayersTab:Button({ Title = "Fling", Callback = function()
     doFling(flingTarget)
 end })
 
--- ========== CORE FUNCTIONS (NEEDED FOR SCRIPT TO WORK) ==========
+-- ========== CORE FUNCTIONS ==========
+
+-- Role detection functions
+local function getRole(p)
+    local char = p.Character
+    local bp = p:FindFirstChild("Backpack")
+    local wsModel = Workspace:FindFirstChild(p.Name)
+    if not char then return stickyRoles[p] end
+    local hasKnife = char:FindFirstChild("Knife") or (bp and bp:FindFirstChild("Knife")) or (wsModel and wsModel:FindFirstChild("Knife"))
+    if hasKnife then
+        stickyRoles[p] = "murder"
+        return "murder"
+    end
+    local hasGun = char:FindFirstChild("Gun") or (bp and bp:FindFirstChild("Gun")) or (wsModel and wsModel:FindFirstChild("Gun"))
+    if hasGun then
+        if not roundActive and stickyRoles[p] == "hero" then return "hero" end
+        local role = gunDropped and "hero" or "sheriff"
+        stickyRoles[p] = role
+        return role
+    end
+    return stickyRoles[p]
+end
+
+local function updateLpVisualFor(p)
+    if not isLpMurd then removeLpVisual(p) return end
+    local pChar = p.Character
+    if not pChar then removeLpVisual(p) return end
+    local role = roles[p]
+    if role == "murder" or role == "hero" then removeLpVisual(p) return end
+    local lpColor = role == "sheriff" and Color3.fromRGB(0, 100, 255) or Color3.fromRGB(0, 255, 80)
+    local lv = lpVisuals[p]
+    if not lv or lv.color ~= lpColor then attachLpVisual(p, pChar, lpColor) end
+end
+
+local function refreshLpMurd()
+    local char = lp.Character
+    local bp = lp:FindFirstChild("Backpack")
+    local wsModel = Workspace:FindFirstChild(lp.Name)
+    local prev = isLpMurd
+    isLpMurd = (char and char:FindFirstChild("Knife") ~= nil) or (bp and bp:FindFirstChild("Knife") ~= nil) or (wsModel and wsModel:FindFirstChild("Knife") ~= nil)
+    if prev == isLpMurd then return end
+    if not roundActive then startRound() end
+    if isLpMurd then
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p ~= lp then applyRole(p) updateLpVisualFor(p) end
+        end
+    else
+        clearAllLpVisuals()
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p ~= lp and p.Character and playersInRound[p] then
+                attachOutline(p, p.Character, roles[p])
+            end
+        end
+    end
+end
+
+local function refreshLpSheriff()
+    local char = lp.Character
+    local bp = lp:FindFirstChild("Backpack")
+    local prev = isLpSheriff
+    isLpSheriff = (char and char:FindFirstChild("Gun") ~= nil) or (bp and bp:FindFirstChild("Gun") ~= nil)
+    if prev == isLpSheriff then return end
+    if isLpSheriff and not roundActive then startRound() end
+end
+
+local function watchLpGun(container)
+    container.ChildAdded:Connect(function(child)
+        if child.Name == "Gun" then refreshLpSheriff() end
+    end)
+    container.ChildRemoved:Connect(function(child)
+        if child.Name == "Gun" then refreshLpSheriff() end
+    end)
+end
+
+local function applyRole(p)
+    local role = getRole(p)
+    local pChar = p.Character
+    local old = roles[p]
+    roles[p] = role
+    if role == "murder" then
+        if murderer ~= p then murderer = p startRound() end
+    elseif old == "murder" and murderer == p then
+        murderer = nil
+    end
+    if role and pChar then
+        local v = visuals[p]
+        if not v or not v.bb or not v.bb.Parent or old ~= role then
+            attachVisuals(p, pChar, role)
+        end
+    else
+        removeVisuals(p)
+    end
+    if pChar and (playersInRound[p] or role ~= nil) then
+        if not isLpMurd and not role then
+            removeOutline(p)
+        else
+            local o = outlines[p]
+            if not o or not o.Parent or old ~= role then
+                attachOutline(p, pChar, role)
+            end
+        end
+    else
+        removeOutline(p)
+    end
+    if old ~= role then updateLpVisualFor(p) end
+end
+
+local function startRound()
+    roundId = roundId + 1
+    roundActive = true
+    gunDropped = false
+    playersInRound = {}
+    playersInRound[lp] = true
+    task.delay(1, function()
+        if not roundActive then return end
+        for _, p in ipairs(Players:GetPlayers()) do playersInRound[p] = true end
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p ~= lp then applyRole(p) end
+        end
+    end)
+    task.delay(3, function()
+        if not roundActive then return end
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p ~= lp then applyRole(p) end
+        end
+    end)
+end
+
+local function endRound()
+    if not roundActive then return end
+    roundActive = false
+    gunDropped = false
+    gunAvailable = false
+    murderer = nil
+    playersInRound = {}
+    local char = lp.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if hrp and hrp.Anchored then hrp.Anchored = false end
+    for p in pairs(outlines) do removeOutline(p) end
+    local thisId = roundId
+    task.delay(15, function()
+        if roundId ~= thisId then return end
+        for p in pairs(visuals) do removeVisuals(p) end
+        for p in pairs(lpVisuals) do removeLpVisual(p) end
+        roles = {}
+        stickyRoles = {}
+    end)
+end
+
+local function removeOutline(p)
+    local hl = outlines[p]
+    outlines[p] = nil
+    if hl and hl.Parent then hl:Destroy() end
+end
+
+local function attachOutline(p, char, role)
+    removeOutline(p)
+    pcall(function()
+        local color = role == "murder" and Color3.fromRGB(255, 0, 0) or (role == "sheriff" and Color3.fromRGB(0, 100, 255) or (role == "hero" and Color3.fromRGB(255, 255, 0) or Color3.fromRGB(0, 255, 80)))
+        local hl = Instance.new("Highlight")
+        hl.Name = "MurderHUD_Outline"
+        hl.Adornee = char
+        hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+        hl.OutlineColor = color
+        hl.OutlineTransparency = 0.6
+        hl.FillTransparency = 1
+        hl.Enabled = true
+        hl.Parent = getGuiParent()
+        outlines[p] = hl
+    end)
+end
+
+local function attachVisuals(p, char, role)
+    if role == "murder" and not espMurder then return end
+    if (role == "sheriff" or role == "hero") and not espSheriff then return end
+    removeVisuals(p)
+    local head = char:FindFirstChild("Head")
+    if not head then return end
+    pcall(function()
+        local color = role == "murder" and Color3.fromRGB(255, 0, 0) or (role == "sheriff" and Color3.fromRGB(0, 100, 255) or Color3.fromRGB(255, 255, 0))
+        local bb = Instance.new("BillboardGui")
+        bb.Name = "tracker"
+        bb.Adornee = head
+        bb.AlwaysOnTop = true
+        bb.Size = UDim2.new(0, 5, 0, 5)
+        bb.StudsOffset = Vector3.new(0, 1, 0)
+        bb.Parent = getGuiParent()
+        local frame = Instance.new("Frame", bb)
+        frame.BackgroundTransparency = 0.3
+        frame.BackgroundColor3 = color
+        frame.Size = UDim2.new(1, 0, 1, 0)
+        local txt = Instance.new("TextLabel", bb)
+        txt.Text = p.Name
+        txt.BackgroundTransparency = 1
+        txt.Position = UDim2.new(0, 0, 0, -35)
+        txt.Size = UDim2.new(1, 0, 10, 0)
+        txt.Font = Enum.Font.ArialBold
+        txt.TextSize = 12
+        txt.TextColor3 = color
+        visuals[p] = { bb = bb }
+    end)
+end
+
+local function removeVisuals(p)
+    local v = visuals[p]
+    if not v then return end
+    visuals[p] = nil
+    if v.bb and v.bb.Parent then v.bb:Destroy() end
+end
+
+local function removeLpVisual(p)
+    local lv = lpVisuals[p]
+    lpVisuals[p] = nil
+    if lv and lv.bb and lv.bb.Parent then lv.bb:Destroy() end
+end
+
+local function clearAllLpVisuals()
+    for p in pairs(lpVisuals) do removeLpVisual(p) end
+end
+
+local function attachLpVisual(p, char, color)
+    if not espInnocent then return end
+    removeLpVisual(p)
+    local head = char:FindFirstChild("Head")
+    if not head then return end
+    pcall(function()
+        local bb = Instance.new("BillboardGui")
+        bb.Name = "LpEspTracker"
+        bb.Adornee = head
+        bb.AlwaysOnTop = true
+        bb.Size = UDim2.new(0, 5, 0, 5)
+        bb.StudsOffset = Vector3.new(0, 1, 0)
+        bb.Parent = getGuiParent()
+        local frame = Instance.new("Frame", bb)
+        frame.BackgroundTransparency = 0.3
+        frame.BackgroundColor3 = color
+        frame.Size = UDim2.new(1, 0, 1, 0)
+        local txt = Instance.new("TextLabel", bb)
+        txt.Text = p.Name
+        txt.BackgroundTransparency = 1
+        txt.Position = UDim2.new(0, 0, 0, -35)
+        txt.Size = UDim2.new(1, 0, 10, 0)
+        txt.Font = Enum.Font.ArialBold
+        txt.TextSize = 12
+        txt.TextColor3 = color
+        lpVisuals[p] = { bb = bb, color = color }
+    end)
+end
+
 local function lockHumanoidStat(hum, prop, val)
     if lockedStats[prop] and lockedStats[prop].conn then
         lockedStats[prop].conn:Disconnect()
@@ -1178,7 +1443,7 @@ end
 local function updateLockedStat(prop, newVal)
     if lockedStats[prop] then lockedStats[prop].val = newVal end
     local char = lp.Character
-    local hum  = char and char:FindFirstChildOfClass("Humanoid")
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
     if hum then hum[prop] = newVal end
 end
 
@@ -1454,128 +1719,7 @@ local function getPlayerOptions()
     return opts
 end
 
-local function removeVisuals(p)
-    local v = visuals[p]
-    if not v then return end
-    visuals[p] = nil
-    if v.bb and v.bb.Parent then v.bb:Destroy() end
-end
-
-local function attachVisuals(p, char, role)
-    if role == "murder" and not espMurder then return end
-    if (role == "sheriff" or role == "hero") and not espSheriff then return end
-    removeVisuals(p)
-    local head = char:FindFirstChild("Head")
-    if not head then return end
-    pcall(function()
-        local color = role == "murder" and Color3.fromRGB(255, 0, 0) or (role == "sheriff" and Color3.fromRGB(0, 100, 255) or Color3.fromRGB(255, 255, 0))
-        local bb = Instance.new("BillboardGui")
-        bb.Name = "tracker"
-        bb.Adornee = head
-        bb.AlwaysOnTop = true
-        bb.Size = UDim2.new(0, 5, 0, 5)
-        bb.StudsOffset = Vector3.new(0, 1, 0)
-        bb.Parent = getGuiParent()
-        local frame = Instance.new("Frame", bb)
-        frame.BackgroundTransparency = 0.3
-        frame.BackgroundColor3 = color
-        frame.Size = UDim2.new(1, 0, 1, 0)
-        local txt = Instance.new("TextLabel", bb)
-        txt.Text = p.Name
-        txt.BackgroundTransparency = 1
-        txt.Position = UDim2.new(0, 0, 0, -35)
-        txt.Size = UDim2.new(1, 0, 10, 0)
-        txt.Font = Enum.Font.ArialBold
-        txt.TextSize = 12
-        txt.TextColor3 = color
-        visuals[p] = { bb = bb }
-    end)
-end
-
-local function removeLpVisual(p)
-    local lv = lpVisuals[p]
-    lpVisuals[p] = nil
-    if lv and lv.bb and lv.bb.Parent then lv.bb:Destroy() end
-end
-
-local function clearAllLpVisuals()
-    for p in pairs(lpVisuals) do removeLpVisual(p) end
-end
-
-local function attachLpVisual(p, char, color)
-    if not espInnocent then return end
-    removeLpVisual(p)
-    local head = char:FindFirstChild("Head")
-    if not head then return end
-    pcall(function()
-        local bb = Instance.new("BillboardGui")
-        bb.Name = "LpEspTracker"
-        bb.Adornee = head
-        bb.AlwaysOnTop = true
-        bb.Size = UDim2.new(0, 5, 0, 5)
-        bb.StudsOffset = Vector3.new(0, 1, 0)
-        bb.Parent = getGuiParent()
-        local frame = Instance.new("Frame", bb)
-        frame.BackgroundTransparency = 0.3
-        frame.BackgroundColor3 = color
-        frame.Size = UDim2.new(1, 0, 1, 0)
-        local txt = Instance.new("TextLabel", bb)
-        txt.Text = p.Name
-        txt.BackgroundTransparency = 1
-        txt.Position = UDim2.new(0, 0, 0, -35)
-        txt.Size = UDim2.new(1, 0, 10, 0)
-        txt.Font = Enum.Font.ArialBold
-        txt.TextSize = 12
-        txt.TextColor3 = color
-        lpVisuals[p] = { bb = bb, color = color }
-    end)
-end
-
-local function updateLpVisualFor(p)
-    if not isLpMurd then removeLpVisual(p) return end
-    local pChar = p.Character
-    if not pChar then removeLpVisual(p) return end
-    local role = roles[p]
-    if role == "murder" or role == "hero" then removeLpVisual(p) return end
-    local lpColor = role == "sheriff" and Color3.fromRGB(0, 100, 255) or Color3.fromRGB(0, 255, 80)
-    local lv = lpVisuals[p]
-    if not lv or lv.color ~= lpColor then attachLpVisual(p, pChar, lpColor) end
-end
-
--- Initialize
-loadConfig()
-CombatTab:Select()
-
-myConfig:Register("SilentAim", SilentAimToggle)
-myConfig:Register("ManualAim", CombatAimToggle)
-myConfig:Register("GrabGun", GrabGunToggle)
-myConfig:Register("Invisible", InvisibleToggle)
-myConfig:Register("AutoGrabGun", AutoGrabGunToggle)
-myConfig:Register("FakeBomb", FakeBombToggle)
-myConfig:Register("InfiniteJump", InfiniteJumpToggle)
-myConfig:Register("MurderEsp", MurderEspToggle)
-myConfig:Register("SheriffEsp", SheriffEspToggle)
-myConfig:Register("InnocentEsp", InnocentEspToggle)
-myConfig:Register("GunEsp", GunEspToggle)
-myConfig:Register("WalkSpeed", WalkSpeedInput)
-myConfig:Register("JumpPower", JumpPowerInput)
-myConfig:Register("TpTarget", TpDropdown)
-myConfig:Register("FlingTarget", FlingDropdown)
-myConfig:Register("Theme", ThemeDropdown)
-myConfig:Register("ThemeColor", ThemeColor)
-
--- Setup character
-lp.CharacterAdded:Connect(function(char)
-    task.wait(0.5)
-    setWalkSpeed(char)
-    setJumpPower(char)
-    local hum = char:FindFirstChildOfClass("Humanoid")
-    if hum then
-        hum.WalkSpeed = currentSpeed
-        hum.JumpHeight = currentJump
-    end
-end)
-
+-- Initialize character settings
 if lp.Character then
     task.wait(0.5)
     local char = lp.Character
@@ -1588,7 +1732,25 @@ if lp.Character then
     end
 end
 
--- Murderer detection
+lp.CharacterAdded:Connect(function(char)
+    task.wait(0.5)
+    setWalkSpeed(char)
+    setJumpPower(char)
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if hum then
+        hum.WalkSpeed = currentSpeed
+        hum.JumpHeight = currentJump
+    end
+end)
+
+-- Watch for gun in backpack
+local bp = lp:FindFirstChild("Backpack")
+if bp then watchLpGun(bp) end
+lp.ChildAdded:Connect(function(child)
+    if child.Name == "Backpack" then watchLpGun(child) end
+end)
+
+-- Murderer detection loop
 task.spawn(function()
     while true do
         task.wait(0.5)
@@ -1604,7 +1766,7 @@ task.spawn(function()
     end
 end)
 
--- ESP update
+-- ESP update loop
 task.spawn(function()
     while true do
         task.wait(0.3)
@@ -1640,7 +1802,7 @@ task.spawn(function()
     end
 end)
 
--- Gun drop ESP
+-- Gun drop ESP loop
 task.spawn(function()
     while true do
         task.wait(0.5)
@@ -1727,5 +1889,54 @@ Workspace.DescendantAdded:Connect(function(desc)
     end
 end)
 
-print("✅ Waguri MM2 Loaded with COMBAT Tab!")
-WindUI:Notify({ Title = "Waguri MM2", Content = "Combat tab added! Click buttons to fight!", Duration = 3, Icon = "sword" })
+-- Velocity smoothing for aim prediction
+RunService.Heartbeat:Connect(function()
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= lp and p.Character then
+            local hrp = p.Character:FindFirstChild("HumanoidRootPart")
+            if hrp then
+                if not velSmooth[p] then velSmooth[p] = {} end
+                local buf = velSmooth[p]
+                buf[#buf + 1] = hrp.AssemblyLinearVelocity
+                if #buf > VEL_SMOOTH_SIZE then table.remove(buf, 1) end
+            end
+        end
+    end
+end)
+
+-- Register configs
+myConfig:Register("SilentAim", SilentAimToggle)
+myConfig:Register("ManualAim", ManualAimToggle)
+myConfig:Register("GrabGun", GrabGunToggle)
+myConfig:Register("Invisible", InvisibleToggle)
+myConfig:Register("AutoGrabGun", AutoGrabGunToggle)
+myConfig:Register("FakeBomb", FakeBombToggle)
+myConfig:Register("InfiniteJump", InfiniteJumpToggle)
+myConfig:Register("MurderEsp", MurderEspToggle)
+myConfig:Register("SheriffEsp", SheriffEspToggle)
+myConfig:Register("InnocentEsp", InnocentEspToggle)
+myConfig:Register("GunEsp", GunEspToggle)
+myConfig:Register("WalkSpeed", WalkSpeedInput)
+myConfig:Register("JumpPower", JumpPowerInput)
+myConfig:Register("TpTarget", TpDropdown)
+myConfig:Register("FlingTarget", FlingDropdown)
+myConfig:Register("Theme", ThemeDropdown)
+myConfig:Register("ThemeColor", ThemeColor)
+
+loadConfig()
+MM2Tab:Select()
+
+Window:Tag({ Title = "V1.67", Icon = "skull", Color = Color3.fromHex("#30ff6a"), Radius = 13 })
+
+WindUI:Popup({
+    Title = "MM2 Waguri",
+    Icon = "sword",
+    Content = "follow waguri so more script :>",
+    Buttons = {
+        { Title = "Close", Callback = function() end, Variant = "Tertiary" },
+        { Title = "Join Discord", Icon = "users", Callback = function() setclipboard("https://discord.gg/") WindUI:Notify({ Title = "Copied!", Content = "Discord invite copied.", Duration = 2, Icon = "check" }) end, Variant = "Primary" }
+    }
+})
+
+print("✅ Waguri MM2 Loaded with MM2 Tab (Yukio Buttons)!")
+WindUI:Notify({ Title = "Waguri MM2", Content = "MM2 tab added! Click buttons to fight!", Duration = 3, Icon = "sword" })
